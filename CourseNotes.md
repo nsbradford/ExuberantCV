@@ -18,37 +18,42 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Basis sets of vectors (linear independence and spanning property)
       * Fourier Series -> transforms -> discrete transforms
         * Any periodic function can be expressed in sine/cosine
+    * Fourier Transofmr and Convolution
+      * Convolution in spatial domain == multiplication in frequency domain, and vice versa
+        * Trick: for very large matrices, instead of convolving, can use FFT on each matrix, multiply, and then inverse FT (IFT) to create convolved image
+    * Aliasing
+      * 
 
 3.  Camera Models and Views
-  a.  3A Camera models
-  b.  3B Stereo geometry
-  c.  3C Camera calibration
-  d.  3D Multiple views
+  1. 3A Camera models
+  * 3B Stereo geometry
+  * 3C Camera calibration
+  * 3D Multiple views
 4.  Image Features
-  a.  4A Feature detection
-  b.  4B Feature descriptors
-  c.  4C Model fitting
+  1. 4A Feature detection
+  * 4B Feature descriptors
+  * 4C Model fitting
 5.  Lighting
-  a.  5A Photometry
-  b.  5B Lightness
-  c.  5C Shape from shading
+  1. 5A Photometry
+  * 5B Lightness
+  * 5C Shape from shading
 6.  Image Motion
-  a.  6A Overview
-  b.  6B Optical flow
+  1. 6A Overview
+  * 6B Optical flow
 7.  Tracking
-  a.  7A Introduction to tracking
-  b.  7B Parametric models
-  c.  7C Non-parametric models
-  d.  7D Tracking considerations
+  1. 7A Introduction to tracking
+  * 7B Parametric models
+  * 7C Non-parametric models
+  * 7D Tracking considerations
 8.  Classification and Recognition
-  a.  8A Introduction to recognition
-  b.  8B Classification: Generative models
-  c.  8C Classification: Discriminative models
-  d.  8D Action recognition
+  1. 8A Introduction to recognition
+  * 8B Classification: Generative models
+  * 8C Classification: Discriminative models
+  * 8D Action recognition
 9.  Useful Methods
-  a.  9A Color spaces and segmentation
-  b.  9B Binary morphology
-  c.  9C 3D perception
+  1. 9A Color spaces and segmentation
+  * 9B Binary morphology
+  * 9C 3D perception
 10. Human Visual System
-  a.  10A The retina
-  b.  10B Vision in the brain
+  1. 10A The retina
+  * 10B Vision in the brain
