@@ -22,18 +22,19 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Convolution in spatial domain == multiplication in frequency domain, and vice versa
         * Trick: for very large matrices, instead of convolving, can use FFT on each matrix, multiply, and then inverse FT (IFT) to create convolved image
     * Aliasing
-      * 
-
-3.  Camera Models and Views
+      * Aliasing occurs when the number of samples is too low to reconstruct a frequency properly (Nyquist frequency is 2x highest frequency in the signal)
+      * Connection to images: when shrinking an image, instead of merely throwing away every other pixel (causes aliasing), use Guassian to retain more information.
+      * Campbell-Robson Contrast Sensitivity: eye sensitivity varies for different frequencies and contrasts, and this can be exploited for compression techniques (DCT)
+3. Camera Models and Views
   1. 3A Camera models
   * 3B Stereo geometry
   * 3C Camera calibration
   * 3D Multiple views
-4.  Image Features
+4. Image Features
   1. 4A Feature detection
   * 4B Feature descriptors
   * 4C Model fitting
-5.  Lighting
+5. Lighting
   1. 5A Photometry
   * 5B Lightness
   * 5C Shape from shading
