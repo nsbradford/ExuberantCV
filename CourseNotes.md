@@ -27,6 +27,16 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Campbell-Robson Contrast Sensitivity: eye sensitivity varies for different frequencies and contrasts, and this can be exploited for compression techniques (DCT)
 3. Camera Models and Views
   1. 3A Camera models
+    * Cameras and Images
+        * Image formation: lens, aperture, focal point
+        * Depth of field: How large an area is "in focus"? Controlled by aperture size; small aperture condenses ray angles and creates a large DOF (deep isntead of shallow)
+        * Field of View (FOV) depends on focal length: large focal length -> large FOV
+        * Zooming and moving the camera create very different perspectives (e.g. portraits should be shot from ~6-10 ft with small FOV instead of up close with a large FOV). Can use "Dolly Zoom" effect.
+        * Geometric Distortion (bowed out or in): has mathematical solutions, can be done automatically knowing a given lens and camera
+        * Chromatic Aberration: different colors travel through the lenses differently (PhotoShop has approximate methods for solving this too)
+    * Perspective Imaging
+        * 
+
   * 3B Stereo geometry
   * 3C Camera calibration
   * 3D Multiple views
