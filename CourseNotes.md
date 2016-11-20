@@ -28,16 +28,24 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
 3. Camera Models and Views
   1. 3A Camera models
     * Cameras and Images
-        * Image formation: lens, aperture, focal point
-        * Depth of field: How large an area is "in focus"? Controlled by aperture size; small aperture condenses ray angles and creates a large DOF (deep isntead of shallow)
-        * Field of View (FOV) depends on focal length: large focal length -> large FOV
-        * Zooming and moving the camera create very different perspectives (e.g. portraits should be shot from ~6-10 ft with small FOV instead of up close with a large FOV). Can use "Dolly Zoom" effect.
-        * Geometric Distortion (bowed out or in): has mathematical solutions, can be done automatically knowing a given lens and camera
-        * Chromatic Aberration: different colors travel through the lenses differently (PhotoShop has approximate methods for solving this too)
+      * Image formation: lens, aperture, focal point
+      * Depth of field: How large an area is "in focus"? Controlled by aperture size; small aperture condenses ray angles and creates a large DOF (deep isntead of shallow)
+      * Field of View (FOV) depends on focal length: large focal length -> large FOV
+      * Zooming and moving the camera create very different perspectives (e.g. portraits should be shot from ~6-10 ft with small FOV instead of up close with a large FOV). Can use "Dolly Zoom" effect.
+      * Geometric Distortion (bowed out or in): has mathematical solutions, can be done automatically knowing a given lens and camera
+      * Chromatic Aberration: different colors travel through the lenses differently (PhotoShop has approximate methods for solving this too)
     * Perspective Imaging
-        * 
-
+      * Center of Projection (COP) at the origin, normal (x, y) and z pointing positively towards the camera (negatively towards the plane)
+      * Use projection equations to model projections of rays
+      * Homogeneous coordinates: add [1] to location vector to make projection transformations linear operations. Multiply the projection matrix (3x4) by the homogenous point vector (4x1), and convert back to 2D to produce coordinates (u, v) of coordinates in image given (x, y, z) and focal length (f: distance from center of projection to image plane). Intuition: points at half the focal length should be half the size
+      * Parallel lines: cross in the image, unless they are exactly aligned with the plane
+        * Sets of parallel lines on the same plane (e.g. the ground) lead to colinear vanishing points, called the horizon for that plane
+      * Orthographic projection (or "parallel projection"): special case where (x, y, z) -> (x, y)
+      * Weak perspective: the change in depth of an object is insignificant compared from the distance to it from the camera.
   * 3B Stereo geometry
+    * Stereo: having two views of a scene. Structure and depth are inherently ambiguous from single views.
+    * How do humans see in 3D? 
+
   * 3C Camera calibration
   * 3D Multiple views
 4. Image Features
