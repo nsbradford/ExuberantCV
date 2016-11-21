@@ -48,7 +48,16 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
     * Problem formulation for basic stereo geometry: two different cameras with different optical centers, image planes, and scene points
       * The challenge is to find the matching images in each of the two images (image point correspondences) so that we can find the depth of that point (we also must know the orientation of the cameras, or "pose" or "calibration")
       * Cameras separated by distance 'B', and distance is positive in left image and negative in right
-
+    * Epipolar geometry: the camera geometry constrains where the corresponding image from one view must occur in the second view (lies along a pair of epipolar lines). The Epipoles are where the epipolar lines converge, and exist at infinity for parallel image planes
+    * Stereo Correspondence
+      * For each point, create a window, then travel across the epipolar lines in the other image and choose the best match with sum of squared error or cross-correlation. Window size can be an issue (esp. when there are multiple matches)
+      * Occlusion: will not always find a region in the other image
+      * Ordering constraint: regions should appear in the same order in both images, except in some odd cases (which are difficult to handle)
+      * Modern methods: compared to Ground truth of depth, hoping for both a good match and smoothness
+        * Optimize correspondence assignments jointly instead of pixel-by-pixel, basically can use Dynamic Time Warp on lines at a time
+        * Describe it all as an Energy function
+      * Challenges: low contrast/textureless image regions, occlusions, violations of brightness constancy (e.g. reflections)
+      
   * 3C Camera calibration
   * 3D Multiple views
 4. Image Features
