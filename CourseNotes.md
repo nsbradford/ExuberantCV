@@ -43,8 +43,11 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Orthographic projection (or "parallel projection"): special case where (x, y, z) -> (x, y)
       * Weak perspective: the change in depth of an object is insignificant compared from the distance to it from the camera.
   * 3B Stereo geometry
-    * Stereo: having two views of a scene. Structure and depth are inherently ambiguous from single views.
-    * How do humans see in 3D? 
+    * Stereo: having two views of a scene, and get shape from "motion" between two images. Structure and depth are inherently ambiguous from single views.
+    * How do humans see in 3D? Perspective effects (parallel lines), shading, changing textures, focus/defocus, motion
+    * Problem formulation for basic stereo geometry: two different cameras with different optical centers, image planes, and scene points
+      * The challenge is to find the matching images in each of the two images (image point correspondences) so that we can find the depth of that point (we also must know the orientation of the cameras, or "pose" or "calibration")
+      * Cameras separated by distance 'B', and distance is positive in left image and negative in right
 
   * 3C Camera calibration
   * 3D Multiple views
