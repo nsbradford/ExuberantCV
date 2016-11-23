@@ -57,8 +57,12 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
         * Optimize correspondence assignments jointly instead of pixel-by-pixel, basically can use Dynamic Time Warp on lines at a time
         * Describe it all as an Energy function
       * Challenges: low contrast/textureless image regions, occlusions, violations of brightness constancy (e.g. reflections)
-      
   * 3C Camera calibration
+    * Two transformations: from [arbitrary] world coordinate System to camera 3D coordinate system (extrinsic calibration or camera pose), and from the 3D coordinates in camera frame to the 2D image plane via projection (intrinsic parameters)
+    * 6 degrees of freedom.
+      * Translation: can be expressed with matrix multiplication using homogeneous coordinates
+      * Rotation:   
+
   * 3D Multiple views
 4. Image Features
   1. 4A Feature detection
