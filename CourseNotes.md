@@ -59,11 +59,31 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Challenges: low contrast/textureless image regions, occlusions, violations of brightness constancy (e.g. reflections)
   * 3C Camera calibration
     * Two transformations: from [arbitrary] world coordinate System to camera 3D coordinate system (extrinsic calibration or camera pose), and from the 3D coordinates in camera frame to the 2D image plane via projection (intrinsic parameters)
-    * 6 degrees of freedom.
+    * Extrinsic Camera calibration: 6 degrees of freedom.
       * Translation: can be expressed with matrix multiplication using homogeneous coordinates
-      * Rotation:   
-
-  * 3D Multiple views
+      * Rotation: matrix column vectors are simply basic vectors of A frame expressed in terms of B frame,
+        * Can be expressed as 3 different rotations (the order of application matters, and there are different standards)
+        * Or, use homogeneous coordinates to just do a single multiplication (remember, rotation is not commutative like translation)
+      * Extrinsic parameter matrix: We can combine the homogeneous translation and rotation into a single transformation matrix (which is invertible)
+    * Intrinsic camera parameters: 5 DoFs
+      * Real intrinsic parameters: must scale pixels to real-world units, and can get even uglier when considering that pixels may not be squares, and axes might not be at right angles
+      * In an idealized world, 'f' focal length is only parameter in intrinsic param matrix
+    * Combine intrinsic and extrinsic matrices into one matrix 'M' or 'pi' which transforms world point 'p' into homogenous coordinate in image, described by Translation of optical center from world coordinate origin, rotation R of the camera system, and focal length and aspect ratio (f, a) of camera
+    * Calibrating cameras
+      * Resectioning: setup some points in the world that we know the 3D locations of, and take some images. Given 6+ points (for 6 degrees of freedom), can use matrix eigenvalues to compute M.
+      * Use Direct linear calibration (transformation): Use the SVD trick (singular value decomposition: express matrix A as UDV^T)
+      * Geometric error function: find smallest distance between observed points and points predicted given M and the image points. Use Maximum Likelihood Estimation
+      * Modern method: multi-plane calibration, basically by taking pictures of checkerboards from multiple angles. Off-the-shelf solutions: OpenCV supports directly
+        * If you have such a checkerboard mounted on a robot arm, can actually automate the entire calibration process!
+  * 3D Multiple views: mapping images to images
+    * 2D Transformations: Translation and rotation (Euclidian/rigid body), similarity (changes size but not proportions), affine (preserves planes/straight lines and relative areas), and projective (preserves lines). The "Homography" is the full 8 degrees of freedom, and requires 4 points to discern between images.
+    * Homographies and mosaics: can compute panoramas by stitching together images taken from same camera optical center, computing the transform, and transforming image #2 to overlap with the first
+      * Content-based manipulation/coding: can be used with multiple images to, say, remove a tennis player from the scene and then add back in at will
+      * Image rectification: use Homography to apply plane-to-plane transformations (warping), recovering planes in original proportions
+        * Forward warping: send each pixel from original image into corresponding location in new image - but what if it doesn't exactly align with a pixel?
+        * Inverse warping: for each pixel (location) in new image, go in the reverse direction to find where it came from, and use bilinear interpolation to smooth 
+    * Projective Geometry
+      * A line in the image is a plane of rays through the origin, represented as a 3-vector (just like a homogeneous vector for a line)
 4. Image Features
   1. 4A Feature detection
   * 4B Feature descriptors
