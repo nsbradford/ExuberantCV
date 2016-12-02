@@ -84,8 +84,24 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
         * Inverse warping: for each pixel (location) in new image, go in the reverse direction to find where it came from, and use bilinear interpolation to smooth 
     * Projective Geometry
       * A line in the image is a plane of rays through the origin, represented as a 3-vector (just like a homogeneous vector for a line)
+      * Given any formula for points/lines, can switch the meanings between points and lines. So, given two points, simply take the cross product of their homogeneous coordinates to find the line between them. Can also find the intersection of two lines the same way.
+      * Can extend all this logic easily into 3D projective geometry
+    * Essential Matrix (precursor to fundamental matrix): can be useful for determining both the relative position and orientation between the cameras and the 3D position of corresponding image points.
+      * Location of X in prime frame (X'), can be obtained by rotating and translating it (X' = RX + T)
+      * X'.t E X = 0 (E is the essential matrix)
+      * Parallel cameras:
+        * R = Identity Matrix, and T = [=B, 0, 0].T where B is distance between the cameras. Thus, Essential Matrix E is written as T cross product R (which can be written as a multiplication). Make use of this to derive that epipolar lines will be horizontal
+    * Fundamental Matrix: infer essential matrix properties from weakly calibrated cameras 
+      * Write as P_image = K_internal * PHI_external * P_world
+      * By estimating fundamental matrix from pixel correspondences in stereo images, can reconstruct epipolar geometry without intrinsic or extrinsic parameters: Line = F * point
+      * Applications: stereo image rectification, photo synch (reconstruct using many images)
+
+
 4. Image Features
   1. 4A Feature detection
+    * Use local features (must detect and match) to find corresponding points between images and construct essential/fundamental matrices
+    * Good features: repeatable/precise, saliency/matchability, compactness and efficiency, locality (a feature only covers a small portion of the image)
+
   * 4B Feature descriptors
   * 4C Model fitting
 5. Lighting
