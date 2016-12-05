@@ -100,6 +100,9 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
     * Use local features (must detect and match) to find corresponding points between images and construct essential/fundamental matrices
     * Good features: repeatable/precise, saliency/matchability, compactness and efficiency, locality (a feature only covers a small portion of the image) 
     * Finding Corners: useful because gradients occur in both directions
+      * Harris Corners: based on approximation and error model (intensity difference) over some small shift [u, v] and some window function (Gaussian, area around a point). Use a second-order (quadratic) Taylor expansion to compute for very small changes, and can cancel out second derivatives! Simplify to calculate a M="second moment matrix", such that E(u,v) ~= [u v] M [u v].T. Taking the eigenvalues of M, get the amount of error change in each direction. If both eigenvalues are large and similarly proportioned, then there are large gradients in both directions, and you've found a corner.
+        * Step-by-step algorithm: compute gaussian derivatives at each pixel, compute second moment matrix M in Gaussian window around each pixel, compute corner response function R, threshold R, and find local maxima of response function
+      * Other corners: Shi-Tomasi used by OpenCV cvGoodFeaturesToTrack(), Brown, and others
 
   * 4B Feature descriptors
   * 4C Model fitting
