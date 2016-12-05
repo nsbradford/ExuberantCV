@@ -6,8 +6,8 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
     * Filtering
       * Convolution and correlation
       * Filters as templates
-      * Edge detection
-        * Canny edge detector
+      * Edge detection: 
+        * Canny edge detector: compute smoothed derivative of image, threshold to find regions of "significant" gradient, and then "thin" to get localized edge pixels
         * Laplacian operator (two-dimensional gradients)
   * 2B Model fitting
     * Hough transform
@@ -18,7 +18,7 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Basis sets of vectors (linear independence and spanning property)
       * Fourier Series -> transforms -> discrete transforms
         * Any periodic function can be expressed in sine/cosine
-    * Fourier Transofmr and Convolution
+    * Fourier Transform and Convolution
       * Convolution in spatial domain == multiplication in frequency domain, and vice versa
         * Trick: for very large matrices, instead of convolving, can use FFT on each matrix, multiply, and then inverse FT (IFT) to create convolved image
     * Aliasing
@@ -95,12 +95,11 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Write as P_image = K_internal * PHI_external * P_world
       * By estimating fundamental matrix from pixel correspondences in stereo images, can reconstruct epipolar geometry without intrinsic or extrinsic parameters: Line = F * point
       * Applications: stereo image rectification, photo synch (reconstruct using many images)
-
-
 4. Image Features
   1. 4A Feature detection
     * Use local features (must detect and match) to find corresponding points between images and construct essential/fundamental matrices
-    * Good features: repeatable/precise, saliency/matchability, compactness and efficiency, locality (a feature only covers a small portion of the image)
+    * Good features: repeatable/precise, saliency/matchability, compactness and efficiency, locality (a feature only covers a small portion of the image) 
+    * Finding Corners: useful because gradients occur in both directions
 
   * 4B Feature descriptors
   * 4C Model fitting
