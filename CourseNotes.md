@@ -103,9 +103,18 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Harris Corners: based on approximation and error model (intensity difference) over some small shift [u, v] and some window function (Gaussian, area around a point). Use a second-order (quadratic) Taylor expansion to compute for very small changes, and can cancel out second derivatives! Simplify to calculate a M="second moment matrix", such that E(u,v) ~= [u v] M [u v].T. Taking the eigenvalues of M, get the amount of error change in each direction. If both eigenvalues are large and similarly proportioned, then there are large gradients in both directions, and you've found a corner.
         * Step-by-step algorithm: compute gaussian derivatives at each pixel, compute second moment matrix M in Gaussian window around each pixel, compute corner response function R, threshold R, and find local maxima of response function
       * Other corners: Shi-Tomasi used by OpenCV cvGoodFeaturesToTrack(), Brown, and others
-
-  * 4B Feature descriptors
+    * Scale Invariance: Harris corners are rotation invariant, mostly invariant to addititive/multiplication, but not to scale (if window is too small, may detect many curved edges instead of a corner).
+      * Use kernel to find robust extrema (max/min) both in space and in scale (look at SIFT later). Key point localization involves taking the differences between Gaussian smoothings at different scales. Also look at "Harris-Laplacian" detector.
+  * 4B Feature descriptors and SIFT: describe a point in order to match them between two images. Descriptor should be invariant (mostly unchanged between the images)
+    * How about correlation? Not rotation invariant, also sensitive to photometric (brightness) changes, and normalized correlation is vulnerable to slight geometric changes and non-linear photometric changes
+    * SIFT (Scale-Invariant Feature Transform): solves the Harris operator not being scale-invariant, and correlation not being rotation-invariant. Has both a detector (operator) and descriptor (important). Tricky to implement (a lot of details to get right)
+      * 1) find keypoints (using Harris-Laplace or some other method), 2) assign orientation to each keypoint region by dominant gradient direction, 3) create a histogram of the gradients as a descriptor, 4) do that for 16 grid squares around the point -> creates a vector with 128 components that becomes the descriptor for the point
+    * Matching feature points: use an approximation of K-Nearest-Neighbor called best-bin-first (modification of k-d tree algorithm, using a heap to identify bins by distance from a point, 100-1000x speedup over K-NN) with 95% accuracy (not practical to have a perfect algorithm)
+      * Locality-sensitive hashing: try to have points in the original space map to same bin
+      * Object recognition: train by extracting keypoints from reference image, then brute-force create affine transforms (requires 3 points) that matches several of the matching keypoints and compare against actual image for testing. This can work with part of the object (some keypoints) occluded
   * 4C Model fitting
+    * Robust error functions
+    
 5. Lighting
   1. 5A Photometry
   * 5B Lightness
