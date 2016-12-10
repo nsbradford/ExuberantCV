@@ -114,7 +114,17 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Object recognition: train by extracting keypoints from reference image, then brute-force create affine transforms (requires 3 points) that matches several of the matching keypoints and compare against actual image for testing. This can work with part of the object (some keypoints) occluded
   * 4C Model fitting
     * Robust error functions
-    
+      * Feature-based alignment algorithm: after computing putative matches for descriptors for feature points, loop until happy: 1) Hypothesize transformation T from some matches, then 2) Verify transformation (search for other matches consistent with T)
+        * Improvement to brute-force putative feature matching: set a threshold, and only pick matches that are above a certain threshold. Compute threshold with both 1-NN and 2-NN (nearly eliminates chance of best match being incorrect)
+        * No matter what you do, there's a "distinctive vs invariant" competition
+    * RANSAC (Random Sample Consensus): finding consistent matches between feature points, by randomly picking some points to define model, and then repeating until you find a model that matches many inliers (lie within some error bound threshold). Parameters: minimal set (dependent on model, which is a homography = 4 points), distance threshold for inliers, number of samples (such that there's a high probability p=0.99 that at least one random sample is free of outliers) set on the outlier ratio.
+      * Cool thing - N will stay low for even a large number of outliers (e.g. > 50%) even when s is 8 (for fundamental matrix).
+      * RANSAC picks the "closest" transform, allowing you to pick the points which come from that model (assuming some Gaussian noise) - then take the average of all those to compute the final transformation.
+      * Algorithm for homography: Select 4 feature pairs at random, compute exact homography H, compute inliers where SSD (p_i', H * pi) < error threshold, keep largest set of inliers, and re-compute least-squares H estimate on all of the inliers
+      * Note: error rate e is often unknown, so start at some high error rate and check to see if it works
+      * Example: can use RANSAC to detect a plane in the image! (useful if on a flat runway...)
+      * In conclusion: widely applicable, robust, easier to get working than Hough transform, really not good for approximate models (if the plane isn't really a plane), is used in nearly every robotic vision problem
+ 
 5. Lighting
   1. 5A Photometry
   * 5B Lightness
