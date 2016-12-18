@@ -124,13 +124,30 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Note: error rate e is often unknown, so start at some high error rate and check to see if it works
       * Example: can use RANSAC to detect a plane in the image! (useful if on a flat runway...)
       * In conclusion: widely applicable, robust, easier to get working than Hough transform, really not good for approximate models (if the plane isn't really a plane), is used in nearly every robotic vision problem
- 
 5. Lighting
   1. 5A Photometry
+    * Photometry: physics/graphics background
+    * Radiometry (study of light): Radiance (L) is energy carried by a ray off of a surface in Watts per square meter per steradian, Irradiance is energy arriving at a surface from a direction in Watts per square meter
+    * BRDF: bidrectional Reflectance Distribution Function relates Radiance and Irradiance
+    * Reflection models: Diffuse/matte/body reflections (not shiny at all, scatters light), Specular/Surface/Glossy/Highlights reflections (very shiny, reflects light directly). Image intensity can be approximated as a combination of Body and Surface reflection
+    * Body reflection: use Lambertian RBDF, which states that object will look the same from every direction
+    * Surface reflection: source and sensor must have both tilt and rotation angles the exact same in order for the ray to hit the sensor
+    * Combined model: "Phong" model
   * 5B Lightness
-  * 5C Shape from shading
+    * In general, images are very ambiguous, and we have to make many assumptions in order to pick from one of many possible solutions (e.g. lightness implies depth)
+    * Assumption: light intensity varies slowly, reflection function is constant within an object, reflection function varies suddenly across different objects
+    * How do we recover the "true" image given our lighting assumptions? Take derivative of log of image, threshold (high-pass filter), and then integrate to recover (losing the constant - absolute brightness unknown)
+    * Color constancy: determine hue and saturation under different colors of lighting
+    * Lightness constancy: gray-level reflectance under differing intensity of lighting
+    * The white-balancing problem has some ok solutions for correcting light source to produce "real" image (works well for pictures), but still an open problem for CV/computational photography
+  * 5C Shape from shading/lighting
+    * Compute a Reflectance Map, assume everything is lambertian
+    * Constained shape from shading approach: assume bounds are known, and object is integrable/smooth throughout with constant albedo (works poorly)
+    * Photometric stereo: take several images with different lighting
 6.  Image Motion
   1. 6A Overview
+    * 
+
   * 6B Optical flow
 7.  Tracking
   1. 7A Introduction to tracking
