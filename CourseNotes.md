@@ -196,13 +196,42 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
         * The new mean is a weighted average of prediction and measurement (higher weights for less uncertainty). Kalmain Gain is the weight given to the measurement
         * Note that there can still be issues when the predictions and measurement disagree slightly, because the combined result will have a very tight variance (despite the massive uncertainty). This is often indicative of an underlying issue with the model itself.
       * Cons: unimodal distribution means only one hypothesis, linear model restricts class of motion (can be fixed with "Extended Kalman Filter")
-      
-
   * 7C Non-parametric models
+    * Particule Filter: a way to describe non-Gaussian distributions by having the underlying model have arbitrary distribution. Density is represented by both location and weight of a particule. 
+      * Assume we have some input, or "perturbation"
+      * Given: prior probability of the sytem state, action (dynamical system) model, sensor model, and stream of observations
+      * Bayes filter: general approach for estimating a distribution over time from incoming measurements and some process model
+    * Particle Filters for Localization: robotics application
+      * Use stochastic universal sampling/systematic resampling so that sampling is efficient
+      * Other considerations: be efficient about resampling, make sure to overestimate noise, recover from failure by randomly distributing some extra particles at every step
+    * Particle filters for real
+      * Good paper: Condensation - Conditional Density Propagation for Visual Tracking (1997)
+    * Tracking considerations: 
+      * Mean-shift: find the modes of a distribution, given a set of samples by repeatedly moving in the direction of the center of mass of a local region (usually converges). Use a similarity function with the Bhattacharyya coefficient. Use a differentiable, isotropic, monotonically decreasing kernel (such as... the Gaussian!)
+      * In order to track people (with segmented body parts), build a generic model, and then learn the appearance for that particular person using some examples
   * 7D Tracking considerations
+    * Initialization: is tricky; can manually start, subtract background, or separate detector function
+    * Sensor and Dynamics models: learn from data, or use domain knowledge; some form of ground truth often required
+    * Prediction vs Correction trade-off: if dynamics model is too strong, incoming data will be ignored
+    * Data Association: decide which measurements go with which objects. Simple strategy; only pay attention to the measurement closest to the prediction. Can be more sophisticated with multiple hypothesis
+    * Drift is still an issue
 8.  Classification and Recognition
   1. 8A Introduction to recognition
+    * Object categorization: given a number of training images of a category, assign correct category label to new images
+    * Issue: most objects fit into multiple categories (e.g. a German Shepherd is a dog is an animal). Use intuition from "Basic Level Categories" in humans. Dogs invoke a clear mental image and set of behaviors, while animal doesn't have a single type of image associated with it
+      * Humans are suspected to have something like 10,000-30,000 object categories, on par with the number of nouns humans use in language
+    * Challenges: training set has varying illumination, object pose, and clutter. Same image can mean different objects if seen in different contexts. Problem is very complex and computationally intensive (estimated to take up something on order of half of the brain in primates)
   * 8B Classification: Generative models
+    * Supervised classification: given a collection of labeled examples, come up with a function that will predict the labels of new examples. 
+      * Generative models: separately build models for each class, then for a new test input, compare the results of each model and return which is most confident; separately model conditional densities and priors
+        * Firm probabilistic grounding, allows you to use priors, can use a small number of examples, new classes don't perturb previous models
+        * Because of the probabilistic model, can be used to generate new examples
+        * However, works best in lower-dimensional spaces, there are issues with acquiring the prior probability, the "hard" cases are difficult to model, and having lots of data won't improve the model.
+      * Discriminative models: construct a decision boundary between the classes; model the posterior
+      * "Risk" of a classifier strategy S is the expected loss; different mistakes may have different associated costs
+      * Principal Component Analysis (PCA): all about which directions in the feature space have the greatest variance. Picture a 2D plot, and collapsing all points to the best-fitting line
+        * 
+
   * 8C Classification: Discriminative models
   * 8D Action recognition
 9.  Useful Methods
