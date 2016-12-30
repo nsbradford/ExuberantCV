@@ -255,13 +255,72 @@ Intro to CV (Udacity: Georgia Tech CS4476/6476)
       * Kernel trick for lifting things into a higher-dimensional space. (has some satisfiability constaints; function must be a dot product in high-dimensional space)
       * Gaussian RBF basically produces dot product in space with infinite dimenisons
       * Compute-heavy during training but very fast on test data
-      * Cons: no "direct" multi-class SVMs (must do one-vs-all or one-vs-one combinations), selecting best kernel function is tricky in practice, 
-
+      * Cons: no "direct" multi-class SVMs (must do one-vs-all or one-vs-one combinations), selecting best kernel function is tricky in practice
+    * Bag of Visual Words: Index local features (think of as an index of words in the back of the book)
+      * Important idea: there are way more documents than words, so representing a document (image) as a set of feature histograms (e.g. with SIFT features) is much more efficient
+      * Can perform similarity() using dot product divided by length 
   * 8D Action recognition
+    * Intro to video analysis: object recognition, background subtraction (very difficult unless camera is static)
+      * Background subtraction: literally get an image of the background and then subtract it from the video feed. Slightly better to use mean filtering, where background is assumed to be average of previous N frames (even better to use Median so its not thrown off by outliers). Can tune using different thresholds for differences
+        * Run into problems with changing/reflective surfaces (e.g. rippling water); model instead as a mixture of Gaussians
+      * Nowadays, can get RGB and Depth channels in your cameras!
+      * Interesting idea: can use Epipolar plane images to construct 3-D block of changing images in video; the streaks through the block will correspond to different depths at which the camera motion occurs! 
+    * Activity Recognition
+      * Event is a single moment in time, Action/Movement is an atomic motion pattern (like a gesture), Activity is a series or composition of actions
+      * Idea: Motion History Images and Motion Energy Images, single images which show range of motion (and History shows the more recent motion as brighter)
+        * Even better are Hu Moments! which are like Moments for summarizing image features, except they're Translation, Scale, and Rotation invariant!
+        * Potential concern: because this approach requires the entire motion, can run into problems when performing in real-time and attempting to classify a half-completed motion
+    * Hidden Markow Models: recognition is fast, training is slow. Go-to method for time series activity recognition
+      * Markov Models: Probability of moving to a given state depends only on the current previous N states, where N is the Order of the Markovian. Use a matrix of state transitions A with initial probability distribution Pi, and thus can determine the likelihood of a particular event
+      * HMM: can't directly observe state, but can observe evidence with emission probabilities (i.e. if hidden variable is the weather, emission probability is P(wearing a bathing suit | snowing outside))
+        * Matrix B gives probability of each piece of evidence, given that you were in a particular state in A.
+      * Use case 1: evaluate likelihood of observations given model: P(O | lambda)
+        * When calculating, is necessary to use the independence assumption to aid in the recursive computation, otherwise calculation will be exponential
+      * Use case 2; Decoding a sequence; finding the most likely set of underlying states that would have generated the observed sequence
+      * Use case 3: find lambda (the HMM), such that P(O | lambda) is maximal
+      * For use cases 2 and 3, perform as an EM (expectation-maximization) problem
 9.  Useful Methods
   1. 9A Color spaces and segmentation
-  * 9B Binary morphology
+    * Color spaces
+      * Cones are responsible for high-resolution vision, and discriminate colors. Three types (long, medium, and short) correspond roughly to R, G, B
+        * Interestingly: the mix of red and green making yellow isn't due to physics, but due to how limitations in the retina are expressed
+      * Humans are much more sensitive to changes in luminance than changes in color
+      * CIE color space: defines different hues, which change visible color according to luminance. View as an HSV/HSL (Hue, Saturation, Lightness) cylinder, where travelling around the circumference is the hue, the saturation increases near the edges, and the lightness increases near the top
+      * RGB Cube: black in one bottom corner, white in the opposite top corner 
+      * Color gamut: subset of possible colors
+      * Useful idea: separate intensity and color in YUV
+    * Segmentation: identify major parts of image (such as objects, background). Often does as a preprocessing step
+      * Idea: group small clusters of similar pixels into "superpixels" such that segmentation can be performed on those large clusters (much less computationally expensive)
+      * Clustering: can use K-means to select clusters by intensities. Add dimensions for color and location in the image to refine things even more!
+        * K-means is memory-intensive and relies on you to pick the K-value
+      * Mean-shift segmentation: seeks modes (local maxima) of density in the LUV color space. Only one param: window size
+        * Cluster together all points in the attraction basin (region for which all trajectories lead to the same mode). Great because it doesn't assume any shapes of the clusters
+        * However, doens't scale well with dimensions of feature space
+      * Can use clustering idea to work with different textures as well! (create "Texton Histograms")
+      * Segmentation by Graph Partitioning: create a graph between every pair of pixels, with the weight as their "affinity" (inverse of similarity)
+        * use a graph cut algorithm (min-cut modified to become normalized cuts, so that the algorithm doesn't snip off only tiny parts of the graph)
+        * must play with affinity matrix (which expresses features and scaling)
+        * is very generic, but has high time complexity (large matrices)
+  * 9B Binary morphology: separate objects from background/one another, aggregate pixels for each object, compute features for each object
+    * Useful operations: threshold a greyscale image, determing a good threshold, connected component analysis, binary matehmatical morphology
+    * Dilation and Erosion of structures (running a structuring matrix over teh image). Combine into Opening (erosion then dilation) or Closing, in order to clean up images.
   * 9C 3D perception
+    * Lots of different ways, such as light striping. Recently infrared has become big become of the cheapness and effectiveness of the Kinect. Replace one of the cameras in a binocolar vision setup with a camera! Kinect uses a speckle IR pattern which it matches against the scene to produce depth
+    * New approach: point clouds, supported by PCL (open-source point cloud library) which has great implementations 
+      * Remember that here surfaces and volumes are inferred from the samples along them, not perceived directly 
 10. Human Visual System
   1. 10A The retina
+    * ~30% of the cortex is used for vision, compared to 8% for touch and 3% for hearing
+    * Retina is inverted: it passes first through the layer of nerves and blood vessels before hitting the rods and cones. Brain does processing to remove the little stable shadows that they produce
+    * Cones are responsible for high-resolution vision, and there are 3 different types (roughly corresponding to red, green and blue) to discriminate colors.
+    * Rods are very sensitive to light intensity changes
+      * Interestingly, for dark sensitivity, the cones take about 8 minutes to adjust, and then the rods kick in and adjust over about 30-40 minutes
+    * Fovea (high-resolution area in the center of retina) only covers <2 degrees; everything else you see is very poor resolution, though very sensitive to motion, and less sensitive to color
+      * Because the Fovea is mostly cones, it doesn't do well in low-light
+    * Ganglion cells consolidate input from several rods/cones, giving the eye a very high dynamic range (14 orders of magnitude!). Real world scenes tend to have light-dark ratios on order of 100,000/1.
+      * This also has the effect that you can detect contrast better at some light frequencies than others, due to distribution of ganglion cell sizes
   * 10B Vision in the brain
+    * Proven mappings between certain visual features (such as particularly angled lines) and even more complex features (such as human hands) and the firing of certain neurons. However, real mapping is probably not 1-to-1 for concepts
+    * There also seems to be a clear hierarchy of concept between brain sections V1, V2, and IT
+    * After V1 and V2, there seem to be two processing pathways: one for fine object recognition, and the other for motion/action recognition
+* All done!
