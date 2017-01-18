@@ -12,8 +12,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from plotter import plot3
 
+
 def old_hough_lines():
-    img = cv2.imread('../img/runway1.jpg')
+    img = cv2.imread('../img/runway1.JPG')
     copy = img.copy()
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray,50,150,apertureSize = 3)
@@ -36,18 +37,19 @@ def old_hough_lines():
     # plt.show()
     # cv2.imwrite('houghlines3.jpg',img)
 
+
 def hough_lines(img):
     copy = img.copy()
     gray = cv2.cvtColor(copy,cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(gray,50,150,apertureSize = 3)
     plt.subplot(133),plt.imshow(edges),plt.title('Lines')
-    plt.show()
+    # plt.show()
 
-    lines = cv2.HoughLines(image=edges, rho=1, theta=np.pi/180, threshold=250)
+    lines = cv2.HoughLines(image=edges, rho=1, theta=np.pi/180, threshold=100)
     # print lines
     # print len(lines)
     # print len(lines[0])
-    for line in lines: #[0]:
+    for line in lines[:1]: #[0]:
         #print line
         rho,theta = line[0]
         a = np.cos(theta)
@@ -61,9 +63,10 @@ def hough_lines(img):
         cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
     return edges, copy
 
+
 def main():
-    print 'load img...'
-    img = cv2.imread('../img/runway1.jpg')
+    print ('load img...')
+    img = cv2.imread('../img/ocean.jpg') #'../img/runway1.JPG' taxi_empty.jpg
     edges, copy = hough_lines(img)
     plot3(img, edges, copy)
 
