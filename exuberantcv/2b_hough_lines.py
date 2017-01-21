@@ -66,7 +66,7 @@ def hough_lines(img):
 
 def main():
     print ('load img...')
-    img = cv2.imread('../img/ocean.jpg') #'../img/runway1.JPG' taxi_empty.jpg
+    img = cv2.imread('../img/taxi_empty.jpg') #'../img/runway1.JPG' taxi_empty.jpg ocean.jpg
     edges, copy = hough_lines(img)
     plot3(img, edges, copy)
 
