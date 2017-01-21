@@ -8,6 +8,15 @@
         which can be modeled as minimizing the product of the three eigenvalues of the
         covariance matrix (the determinant). 
 
+    In its current form, can run 10000 iterations in 9.1 seconds, or about 30 per iteration
+        at 30Hz. Java performance benefit of 10x would mean 300 per iteration,
+        and moving to 10Hz would leave ~1000 per iteration.
+    The initial optimized search grid is on a 12x12 grid (144 values),
+        which is then refined on a full-resolution image using a gradient-descent-like
+        sampling technique. (requires 4 checks at each step and ~7 steps = ~28, but
+        will but at higher resolution)
+    Total requirements: must be able to run at least ~200 checks/second
+
 """
 
 import cv2
@@ -49,11 +58,9 @@ def split_img_by_line(img, m, b):
     reshape1 = segment1.reshape(-1, segment1.shape[-1])
     reshape2 = segment2.reshape(-1, segment2.shape[-1])
     assert reshape1.shape[1] == reshape2.shape[1] == 3
-    print('Segment shapes: ', (reshape1.shape, reshape2.shape))
+    # print('Segment shapes: ', (reshape1.shape, reshape2.shape))
     return (reshape1, reshape2)
 
-def sq_sum_eval(vals):
-    return 
 
 def compute_variance_score(segment1, segment2):
     # print('Covariance matrices: )
@@ -65,7 +72,6 @@ def compute_variance_score(segment1, segment2):
     cov1 = np.cov(segment1.T)
     cov2 = np.cov(segment2.T)
     assert cov1.shape == cov2.shape == (3,3)
-
     evals1, evecs1 = np.linalg.eig(cov1)
     evals2, evecs2 = np.linalg.eig(cov2)
 
@@ -74,16 +80,17 @@ def compute_variance_score(segment1, segment2):
     # score when this case occurs (the determinant dominates it in the normal case):
     #   where g=GROUND and s=SKY (covariance matrices) 
     #   F = [det(G) + det(S) + (eigG1 + eigG1 + eigG1)^2 + (eigS1 + eigS1 + eigS1)^2]^-1
-
     F = np.linalg.det(cov1) + np.linalg.det(cov2) + (np.sum(evals1) ** 2) + (np.sum(evals2) ** 2)
     return F ** -1
+
 
 def score_line(img, m, b):
     seg1, seg2 = split_img_by_line(img, m=m, b=b)
     score = compute_variance_score(seg1, seg2)
     return score
 
-def main():
+
+def load_img():
     print ('load img...')
     img = cv2.imread('../img/ocean.jpg') #'../img/runway1.JPG' taxi_empty.jpg
     print('Image shape: ', img.shape) # rows, columns, depth (height x width x color)
@@ -91,14 +98,28 @@ def main():
     resized = cv2.resize(img, dsize=None, fx=0.2, fy=0.2)
     # blur = cv2.GaussianBlur(resized,(3,3),0) # blurs the horizon too much
     print('Resized shape:', resized.shape)
+    # plt.subplot(121),plt.imshow(img),plt.title('Input')
+    # plt.subplot(122),plt.imshow(resized),plt.title('Output')
+    # plt.show()
+    return resized
 
-    plt.subplot(121),plt.imshow(img),plt.title('Input')
-    plt.subplot(122),plt.imshow(resized),plt.title('Output')
-    plt.show()
 
-    good_line = score_line(resized, m=0.0, b=20)
-    bad_line = score_line(resized, m=2.0, b=0)
+def main():
+    img = load_img()
+    good_line = score_line(img, m=0.0, b=20)
+    bad_line = score_line(img, m=2.0, b=0)
     assert good_line > bad_line
+    print('Basic test of scoring works.')
+
+
+def time_score():
+    import timeit
+    result = timeit.timeit('horizon.score_line(img, m=0.0,  b=20)', 
+                        setup='import horizon; img=horizon.load_img();', 
+                        number=1000)
+    print('Timing:', result/1000, 'seconds to score a single line.')
+
 
 if __name__ == '__main__':
     main()
+    # time_score()
