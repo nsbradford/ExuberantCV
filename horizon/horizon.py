@@ -113,7 +113,6 @@ def load_img(path):
 
 
 def optimize_scores(img):
-    pass
     # convert (pitch angle, bank angle) to (slope, intercept)
     # grid = []
     # pitch_range = 1.0 # TODO
@@ -125,52 +124,23 @@ def optimize_scores(img):
     # max_index = np.argmax(scores)
     # answer = grid[max_index]
     grid = []
-    for b in range( 1, img.shape[0] - 2):
-        for m in range(- (img.shape[0] - 1), img.shape[1] - 1):
+    for b in np.arange( 1, img.shape[0] - 2, 0.5):
+        for m in np.arange(- (img.shape[0] - 1), img.shape[1] - 1, 0.25):
             grid.append((m, b))
+    
     scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
     # for i in range(len(scores)): print(i, ':', scores[i])
     return scores, grid
 
 
-def plot3D(X, Y, Z):
-    print('Plot in 3D...')
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    from matplotlib.ticker import LinearLocator, FormatStrFormatter 
-
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    # X = np.arange(-5, 5, 0.25)
-    # Y = np.arange(-5, 5, 0.25)
-    # X, Y = np.meshgrid(X, Y)
-    # R = np.sqrt(X**2 + Y**2)
-    # Z = np.sin(R)
-    # print(X.shape, Y.shape, len(Z))
-    # surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
-    #         linewidth=0, antialiased=False)
-    surf = ax.plot_wireframe(X, Y, Z, rstride=1, cstride=1)
-    # ax.set_zlim(-1.01, 1.01)
-
-    # ax.zaxis.set_major_locator(LinearLocator(10))
-    # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-    # fig.colorbar(surf, shrink=0.5, aspect=5)
-    
-    # print (Z)
-    plt.show()
-
 def scatter3D(X, Y, Z):
     print('Plot in 3D...')
-
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(X, Y, Z, c=np.abs(Z), cmap=cm.coolwarm)
-
     ax.set_xlabel('M (slope)')
     ax.set_ylabel('B (intercept)')
     ax.set_zlabel('Z Label')
-
     plt.show()
 
 
@@ -179,8 +149,8 @@ def main():
     good_line = score_line(img, m=0.0, b=20)
     bad_line = score_line(img, m=2.0, b=0)
     assert good_line > bad_line
-    print('Basic test of scoring works...')
-
+    print('Basic test of scoring...')
+    print('Optimize scores...')
     scores, grid = optimize_scores(img)
     max_index = np.argmax(scores)
     answer = grid[max_index]
@@ -190,8 +160,8 @@ def main():
     b = answer[1]
 
     print('m:', m, '  b:', b)
-    pt1 = (0, b)
-    pt2 = img.shape[1] - 1, m * (img.shape[1] - 1) + b
+    pt1 = (0, b.astype(np.int64))
+    pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
     print (pt2)
 
     cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
@@ -208,9 +178,7 @@ def main():
     Y = [option[1] for option in grid] # b
     Z = y
     print(len(X), len(Y), len(Z))
-    # plot3D(X[::20], Y[::20], Z[::20])
-    # scatter3D(X[::10], Y[::10], Z[::10])
-    scatter3D(X, Y, Z)
+    scatter3D(X, Y, Z) # scatter3D(X[::10], Y[::10], Z[::10])
 
 
 def time_score():
