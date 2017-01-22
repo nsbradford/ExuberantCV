@@ -99,7 +99,7 @@ def score_line(img, m, b):
 
 def load_img():
     print ('load img...')
-    img = cv2.imread('../img/sunset.jpg') #'../img/runway1.JPG' taxi_empty.jpg ocean
+    img = cv2.imread('../img/taxi_empty.jpg') #'../img/runway1.JPG' taxi_empty.jpg ocean sunset grass
     print('Image shape: ', img.shape) # rows, columns, depth (height x width x color)
     print('Resize...')
     resized = cv2.resize(img, dsize=None, fx=0.2, fy=0.2)
@@ -121,16 +121,22 @@ def main():
     for i in range(len(scores)): print(i, ':', scores[i])
     max_index = np.argmax(scores)
     answer = grid[max_index]
-    print('Max:', max_index, )
+    print('Max:', max_index)
 
     m = answer[0]
     b = answer[1]
     pt1 = (0, b)
     pt2 = img.shape[1] - 1, m * (img.shape[1] - 1) + b
 
-    cv2.line(img=img, pt1=pt1, pt2=pt2, color=(255,0,0), thickness=1)
-    plt.subplot(121),plt.imshow(img),plt.title('Input')
-    # plt.subplot(122),plt.imshow(resized),plt.title('Output')
+    cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
+    plt.subplot(121)
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.title('Input')
+    plt.subplot(122)
+    y = list(map(lambda x: x * (10**8), scores))
+    x = list(range(len(scores)))
+    plt.fill_between(x, y, [0 for x in range(len(scores))], color='grey')
+    # plt.imshow(resized),plt.title('Output')
     plt.show()
 
 
