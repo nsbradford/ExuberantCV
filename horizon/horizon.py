@@ -22,7 +22,8 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 def img_line_mask(rows, columns, m, b):
     """ Params:
@@ -49,6 +50,7 @@ def split_img_by_line(img, m, b):
         Returns:
             (arr1, arr2): two np.arrays with 3 columns (RGB) and N rows (one for each pixel)
     """
+    # print('\tLine:', m, b)
     mask = img_line_mask(rows=img.shape[0], columns=img.shape[1], m=m, b=b)
     assert len(mask.shape) == 2
     assert mask.shape[0] == img.shape[0]
@@ -73,11 +75,12 @@ def compute_variance_score(segment1, segment2):
      # linalg.eigh() is more stable than np.linalg.eig, but only for symmetric matrices
     assert segment1.shape[1] == segment2.shape[1] == 3
     # TODO shouldn't be wasting time on impossible hypotheses
-    if segment1.shape[0] == 0 or segment2.shape[0] == 0:
+    if segment1.shape[0] < 2 or segment2.shape[0] < 2:
         raise RuntimeError('Invalid hypothesis.')
     cov1 = np.cov(segment1.T)
     cov2 = np.cov(segment2.T)
     assert cov1.shape == cov2.shape == (3,3)
+    # print('Covariance matrices:', cov1, cov2)
     evals1, evecs1 = np.linalg.eig(cov1)
     evals2, evecs2 = np.linalg.eig(cov2)
 
@@ -91,15 +94,16 @@ def compute_variance_score(segment1, segment2):
 
 
 def score_line(img, m, b):
-    print('Score', img.shape, m, b)
+    # print('Score', img.shape, m, b)
     seg1, seg2 = split_img_by_line(img, m=m, b=b)
+    # print('\tSegment shapes: ', seg1.shape, seg2.shape)
     score = compute_variance_score(seg1, seg2)
     return score
 
 
-def load_img():
-    print ('load img...')
-    img = cv2.imread('../img/taxi_empty.jpg') #'../img/runway1.JPG' taxi_empty.jpg ocean sunset grass
+def load_img(path):
+    print ('load img...') # taxi_rotate.png
+    img = cv2.imread(path)
     print('Image shape: ', img.shape) # rows, columns, depth (height x width x color)
     print('Resize...')
     resized = cv2.resize(img, dsize=None, fx=0.2, fy=0.2)
@@ -108,25 +112,87 @@ def load_img():
     return resized
 
 
+def optimize_scores(img):
+    pass
+    # convert (pitch angle, bank angle) to (slope, intercept)
+    # grid = []
+    # pitch_range = 1.0 # TODO
+    # bank_range = 1.0 # TOOD
+    # for i in range(pitch_range):
+    #     for j in range(bank_range):
+    #         grid.append(i, j)
+    # scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
+    # max_index = np.argmax(scores)
+    # answer = grid[max_index]
+    grid = []
+    for b in range( 1, img.shape[0] - 2):
+        for m in range(- (img.shape[0] - 1), img.shape[1] - 1):
+            grid.append((m, b))
+    scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
+    # for i in range(len(scores)): print(i, ':', scores[i])
+    return scores, grid
+
+
+def plot3D(X, Y, Z):
+    print('Plot in 3D...')
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator, FormatStrFormatter 
+
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    # X = np.arange(-5, 5, 0.25)
+    # Y = np.arange(-5, 5, 0.25)
+    # X, Y = np.meshgrid(X, Y)
+    # R = np.sqrt(X**2 + Y**2)
+    # Z = np.sin(R)
+    # print(X.shape, Y.shape, len(Z))
+    # surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
+    #         linewidth=0, antialiased=False)
+    surf = ax.plot_wireframe(X, Y, Z, rstride=1, cstride=1)
+    # ax.set_zlim(-1.01, 1.01)
+
+    # ax.zaxis.set_major_locator(LinearLocator(10))
+    # ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+
+    # fig.colorbar(surf, shrink=0.5, aspect=5)
+    
+    # print (Z)
+    plt.show()
+
+def scatter3D(X, Y, Z):
+    print('Plot in 3D...')
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X, Y, Z, c=np.abs(Z), cmap=cm.coolwarm)
+
+    ax.set_xlabel('M (slope)')
+    ax.set_ylabel('B (intercept)')
+    ax.set_zlabel('Z Label')
+
+    plt.show()
+
+
 def main():
-    img = load_img()
+    img = load_img('../img/taxi_rotate.png') #'../img/runway1.JPG' taxi_empty.jpg ocean sunset grass
     good_line = score_line(img, m=0.0, b=20)
     bad_line = score_line(img, m=2.0, b=0)
     assert good_line > bad_line
-    print('Basic test of scoring works.')
+    print('Basic test of scoring works...')
 
-    m = 0
-    grid = [(m, b) for b in range(img.shape[0]-1)]
-    scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
-    for i in range(len(scores)): print(i, ':', scores[i])
+    scores, grid = optimize_scores(img)
     max_index = np.argmax(scores)
     answer = grid[max_index]
     print('Max:', max_index)
 
     m = answer[0]
     b = answer[1]
+
+    print('m:', m, '  b:', b)
     pt1 = (0, b)
     pt2 = img.shape[1] - 1, m * (img.shape[1] - 1) + b
+    print (pt2)
 
     cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
     plt.subplot(121)
@@ -138,6 +204,13 @@ def main():
     plt.fill_between(x, y, [0 for x in range(len(scores))], color='grey')
     # plt.imshow(resized),plt.title('Output')
     plt.show()
+    X = [option[0] for option in grid] # m
+    Y = [option[1] for option in grid] # b
+    Z = y
+    print(len(X), len(Y), len(Z))
+    # plot3D(X[::20], Y[::20], Z[::20])
+    # scatter3D(X[::10], Y[::10], Z[::10])
+    scatter3D(X, Y, Z)
 
 
 def time_score():
