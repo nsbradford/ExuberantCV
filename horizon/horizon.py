@@ -33,6 +33,7 @@ def img_line_mask(rows, columns, m, b):
         Returns:
             rows x columns np.array boolean mask with True for all values above the line
     """
+    # TODO: there must be a way to optimize this
     mask = np.zeros((rows, columns), dtype=np.bool)
     for y in range(rows):
         for x in range(columns):
@@ -49,7 +50,6 @@ def split_img_by_line(img, m, b):
             (arr1, arr2): two np.arrays with 3 columns (RGB) and N rows (one for each pixel)
     """
     mask = img_line_mask(rows=img.shape[0], columns=img.shape[1], m=m, b=b)
-    # mask = img_line_mask(10,10,m,b)
     assert len(mask.shape) == 2
     assert mask.shape[0] == img.shape[0]
     assert mask.shape[1] == mask.shape[1]
@@ -58,17 +58,23 @@ def split_img_by_line(img, m, b):
     reshape1 = segment1.reshape(-1, segment1.shape[-1])
     reshape2 = segment2.reshape(-1, segment2.shape[-1])
     assert reshape1.shape[1] == reshape2.shape[1] == 3
-    # print('Segment shapes: ', (reshape1.shape, reshape2.shape))
     return (reshape1, reshape2)
 
 
 def compute_variance_score(segment1, segment2):
+    """ Params:
+            segment1 (np.array): n x 3, where n is number of pixels in first segment
+            segment2 (np.array): n x 3, where n is number of pixels in first segment
+        Returns:
+            F (np.double): the score for these two segments (higher = better line hypothesis)
+    """
     # print('Covariance matrices: )
     # print(np.cov(seg1), np.cov(seg2))
      # linalg.eigh() is more stable than np.linalg.eig, but only for symmetric matrices
     assert segment1.shape[1] == segment2.shape[1] == 3
-    assert segment1.shape[0] > 3
-    assert segment2.shape[0] > 3
+    # TODO shouldn't be wasting time on impossible hypotheses
+    if segment1.shape[0] == 0 or segment2.shape[0] == 0:
+        raise RuntimeError('Invalid hypothesis.')
     cov1 = np.cov(segment1.T)
     cov2 = np.cov(segment2.T)
     assert cov1.shape == cov2.shape == (3,3)
@@ -85,6 +91,7 @@ def compute_variance_score(segment1, segment2):
 
 
 def score_line(img, m, b):
+    print('Score', img.shape, m, b)
     seg1, seg2 = split_img_by_line(img, m=m, b=b)
     score = compute_variance_score(seg1, seg2)
     return score
@@ -92,15 +99,12 @@ def score_line(img, m, b):
 
 def load_img():
     print ('load img...')
-    img = cv2.imread('../img/ocean.jpg') #'../img/runway1.JPG' taxi_empty.jpg
+    img = cv2.imread('../img/sunset.jpg') #'../img/runway1.JPG' taxi_empty.jpg ocean
     print('Image shape: ', img.shape) # rows, columns, depth (height x width x color)
     print('Resize...')
     resized = cv2.resize(img, dsize=None, fx=0.2, fy=0.2)
     # blur = cv2.GaussianBlur(resized,(3,3),0) # blurs the horizon too much
     print('Resized shape:', resized.shape)
-    # plt.subplot(121),plt.imshow(img),plt.title('Input')
-    # plt.subplot(122),plt.imshow(resized),plt.title('Output')
-    # plt.show()
     return resized
 
 
@@ -110,6 +114,24 @@ def main():
     bad_line = score_line(img, m=2.0, b=0)
     assert good_line > bad_line
     print('Basic test of scoring works.')
+
+    m = 0
+    grid = [(m, b) for b in range(img.shape[0]-1)]
+    scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
+    for i in range(len(scores)): print(i, ':', scores[i])
+    max_index = np.argmax(scores)
+    answer = grid[max_index]
+    print('Max:', max_index, )
+
+    m = answer[0]
+    b = answer[1]
+    pt1 = (0, b)
+    pt2 = img.shape[1] - 1, m * (img.shape[1] - 1) + b
+
+    cv2.line(img=img, pt1=pt1, pt2=pt2, color=(255,0,0), thickness=1)
+    plt.subplot(121),plt.imshow(img),plt.title('Input')
+    # plt.subplot(122),plt.imshow(resized),plt.title('Output')
+    plt.show()
 
 
 def time_score():
