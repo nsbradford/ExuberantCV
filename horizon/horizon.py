@@ -118,10 +118,12 @@ def load_img(path):
 def accelerated_search(img, m_initial, b_initial, max_score):
     m = m_initial
     b = b_initial
-    max_iter = 7
-    delta_m = 0.5
-    delta_b = 0.5
+    max_iter = 10
+    delta_m = 1.0
+    delta_b = 1.0
     for i in range(max_iter):
+        print('\t', delta_m, m, b)
+        max_score = score_line(img, m, b)
         max_m = m
         max_b = b
 
@@ -131,18 +133,21 @@ def accelerated_search(img, m_initial, b_initial, max_score):
             max_b = b
 
         est2 = score_line(img, m - delta_m, b)
-        if est1 > max_score:
+        if est2 > max_score:
             max_m -= delta_m
             max_b = b
 
         est3 = score_line(img, m, b + delta_b)
-        if est1 > max_score:
+        if est3 > max_score:
             max_m = m
             max_b += delta_b
 
         est4 = score_line(img, m, b - delta_b)
-        if est1 > max_score:
-            b -= delta_b
+        if est4 > max_score:
+            max_m = m
+            max_b -= delta_b
+
+        # print(max_score, est1, est2, est3, est4) 
 
         m = max_m
         b = max_b
