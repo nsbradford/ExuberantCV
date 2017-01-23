@@ -21,9 +21,7 @@
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
+
 
 def img_line_mask(rows, columns, m, b):
     """ Params:
@@ -94,6 +92,12 @@ def compute_variance_score(segment1, segment2):
 
 
 def score_line(img, m, b):
+    """
+        Params:
+            img
+            m
+            b
+    """
     # print('Score', img.shape, m, b)
     seg1, seg2 = split_img_by_line(img, m=m, b=b)
     # print('\tSegment shapes: ', seg1.shape, seg2.shape)
@@ -111,8 +115,50 @@ def load_img(path):
     print('Resized shape:', resized.shape)
     return resized
 
+def accelerated_search(img, m_initial, b_initial, max_score):
+    m = m_initial
+    b = b_initial
+    max_iter = 7
+    delta_m = 0.5
+    delta_b = 0.5
+    for i in range(max_iter):
+        max_m = m
+        max_b = b
+
+        est1 = score_line(img, m + delta_m, b)
+        if est1 > max_score:
+            max_m += delta_m
+            max_b = b
+
+        est2 = score_line(img, m - delta_m, b)
+        if est1 > max_score:
+            max_m -= delta_m
+            max_b = b
+
+        est3 = score_line(img, m, b + delta_b)
+        if est1 > max_score:
+            max_m = m
+            max_b += delta_b
+
+        est4 = score_line(img, m, b - delta_b)
+        if est1 > max_score:
+            b -= delta_b
+
+        m = max_m
+        b = max_b
+        delta_m /= 2
+        delta_b /= 2
+    return m, b    
 
 def optimize_scores(img):
+    """
+        Params:
+            img
+        Returns:
+            Answer: Tuple of (m, b)
+            Scores (list of np.double)
+            Grod
+    """
     # convert (pitch angle, bank angle) to (slope, intercept)
     # grid = []
     # pitch_range = 1.0 # TODO
@@ -124,71 +170,17 @@ def optimize_scores(img):
     # max_index = np.argmax(scores)
     # answer = grid[max_index]
     grid = []
-    for b in np.arange( 1, img.shape[0] - 2, 0.5):
-        for m in np.arange(- (img.shape[0] - 1), img.shape[1] - 1, 0.25):
+    for b in np.arange( 1, img.shape[0] - 2, 2.0):
+        for m in np.arange(- (img.shape[0] - 1), img.shape[1] - 1, 1.0):
             grid.append((m, b))
     
     scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
     # for i in range(len(scores)): print(i, ':', scores[i])
-    return scores, grid
-
-
-def scatter3D(X, Y, Z):
-    print('Plot in 3D...')
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X, Y, Z, c=np.abs(Z), cmap=cm.coolwarm)
-    ax.set_xlabel('M (slope)')
-    ax.set_ylabel('B (intercept)')
-    ax.set_zlabel('Z Label')
-    plt.show()
-
-
-def main():
-    img = load_img('../img/taxi_rotate.png') #'../img/runway1.JPG' taxi_empty.jpg ocean sunset grass
-    good_line = score_line(img, m=0.0, b=20)
-    bad_line = score_line(img, m=2.0, b=0)
-    assert good_line > bad_line
-    print('Basic test of scoring...')
-    print('Optimize scores...')
-    scores, grid = optimize_scores(img)
     max_index = np.argmax(scores)
     answer = grid[max_index]
-    print('Max:', max_index)
-
     m = answer[0]
     b = answer[1]
-
-    print('m:', m, '  b:', b)
-    pt1 = (0, b.astype(np.int64))
-    pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
-    print (pt2)
-
-    cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
-    plt.subplot(121)
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    plt.title('Input')
-    plt.subplot(122)
-    y = list(map(lambda x: x * (10**8), scores))
-    x = list(range(len(scores)))
-    plt.fill_between(x, y, [0 for x in range(len(scores))], color='grey')
-    # plt.imshow(resized),plt.title('Output')
-    plt.show()
-    X = [option[0] for option in grid] # m
-    Y = [option[1] for option in grid] # b
-    Z = y
-    print(len(X), len(Y), len(Z))
-    scatter3D(X, Y, Z) # scatter3D(X[::10], Y[::10], Z[::10])
-
-
-def time_score():
-    import timeit
-    result = timeit.timeit('horizon.score_line(img, m=0.0,  b=20)', 
-                        setup='import horizon; img=horizon.load_img();', 
-                        number=1000)
-    print('Timing:', result/1000, 'seconds to score a single line.')
-
-
-if __name__ == '__main__':
-    main()
-    # time_score()
+    print('Initial anser - m:', m, '  b:', b)
+    print('Accelerate search...')
+    second_answer = accelerated_search(img, answer[0], answer[1], scores[max_index])
+    return second_answer, scores, grid
