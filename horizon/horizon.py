@@ -111,7 +111,7 @@ def accelerated_search(img, m_initial, b_initial, max_score):
     m = m_initial
     b = b_initial
     max_iter = 10
-    delta_m = 1.0
+    delta_m = 0.5
     delta_b = 1.0
     for i in range(max_iter):
         # print('\t', delta_m, m, b)
@@ -189,9 +189,11 @@ def optimize_scores(img):
     # scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
     # max_index = np.argmax(scores)
     # answer = grid[max_index]
+    # old slope : for m in np.arange(- 2 * (img.shape[0] - 1), 2 * img.shape[1] - 1, 1.0):
+
     grid = []
-    for b in np.arange( 1, img.shape[0] - 2, 2.0):
-        for m in np.arange(- (img.shape[0] - 1), img.shape[1] - 1, 1.0):
+    for b in np.arange( 1, img.shape[0] - 2, 1.0):
+        for m in np.arange(-5, 5, 0.5):
             grid.append((m, b))
     
     scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
