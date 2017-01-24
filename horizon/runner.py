@@ -1,5 +1,6 @@
 
 import cv2 # for reading photos and videos
+import numpy as np
 from horizon import optimize_scores
 import plotter
 
@@ -49,26 +50,37 @@ def main():
     print(len(X), len(Y), len(Z))
     plotter.scatter3D(X, Y, Z) # scatter3D(X[::10], Y[::10], Z[::10])
 
+
 def add_line_to_frame(img, m, b):
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     pt1 = (0, b.astype(np.int64))
     pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
-    cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    cv2.line(img=rgb_img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
     return rgb_img
 
+
 def video_demo():
-    cap = cv2.VideoCapture('flying.mp4')
+    print('Load video...')
+    cap = cv2.VideoCapture('../../flying_turn.avi')
+    count = 0
     while(cap.isOpened()):
+        print('Read new frame...')
         ret, frame = cap.read()
-        img = cv2.resize(frame, dsize=None, fx=0.2, fy=0.2)
+        count += 1
+        if count % 20 != 0:
+            continue
+        if not ret:
+            break
+        img = cv2.resize(frame, dsize=None, fx=0.1, fy=0.1)
+        print('Optimize...', img.shape)
         answer, scores, grid = optimize_scores(img)
         m = answer[0]
         b = answer[1]
         label = 'Prediction m: ' + str(m) + ' b: ' + str(b)
-        prediction = add_line_to_frame(img, m, b)
-        cv2.imshow('frame',frame)
-        cv2.imshow(label, prediction)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        prediction = add_line_to_frame(frame, m, b*10.0)#m=np.float32(0.0), b=np.float32(30.0))
+        # cv2.imshow('frame',frame)
+        cv2.imshow('label', prediction)
+        if cv2.waitKey(25) & 0xFF == ord('q'):
             break
     cap.release()
     cv2.destroyAllWindows()

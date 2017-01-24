@@ -114,7 +114,7 @@ def accelerated_search(img, m_initial, b_initial, max_score):
     delta_m = 1.0
     delta_b = 1.0
     for i in range(max_iter):
-        print('\t', delta_m, m, b)
+        # print('\t', delta_m, m, b)
         max_score = score_line(img, m, b)
         max_m = m
         max_b = b
@@ -178,7 +178,8 @@ def optimize_scores(img):
     answer = grid[max_index]
     m = answer[0]
     b = answer[1]
-    print('Initial anser - m:', m, '  b:', b)
-    print('Accelerate search...')
+    print('\tInitial answer - m:', m, '  b:', b)
+    print('\tAccelerate search...')
     second_answer = accelerated_search(img, answer[0], answer[1], scores[max_index])
+    print('\trefined_answer: - m:', second_answer[0], '  b:', second_answer[1])
     return second_answer, scores, grid

@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture('flying.mp4')
+cap = cv2.VideoCapture('../../flying_turn.avi')
 
 while(cap.isOpened()):
     ret, frame = cap.read()

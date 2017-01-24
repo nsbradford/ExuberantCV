@@ -9,12 +9,11 @@ from matplotlib import cm
 def plot2D(img, scores, m, b):
     pt1 = (0, b.astype(np.int64))
     pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
-    print (pt2)
-
     cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
     plt.subplot(121)
     plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     plt.title('Input')
+    
     plt.subplot(122)
     y = list(map(lambda x: x * (10**8), scores))
     x = list(range(len(scores)))
