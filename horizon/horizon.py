@@ -87,7 +87,9 @@ def compute_variance_score(segment1, segment2):
     # score when this case occurs (the determinant dominates it in the normal case):
     #   where g=GROUND and s=SKY (covariance matrices) 
     #   F = [det(G) + det(S) + (eigG1 + eigG1 + eigG1)^2 + (eigS1 + eigS1 + eigS1)^2]^-1
-    F = np.linalg.det(cov1) + np.linalg.det(cov2) + (np.sum(evals1) ** 2) + (np.sum(evals2) ** 2)
+    det1 = np.linalg.det(cov1)
+    det2 = np.linalg.det(cov2)
+    F =  det1 + det2 + (np.sum(evals1) ** 2) + (np.sum(evals2) ** 2)
     return F ** -1
 
 
@@ -104,16 +106,6 @@ def score_line(img, m, b):
     score = compute_variance_score(seg1, seg2)
     return score
 
-
-def load_img(path):
-    print ('load img...') # taxi_rotate.png
-    img = cv2.imread(path)
-    print('Image shape: ', img.shape) # rows, columns, depth (height x width x color)
-    print('Resize...')
-    resized = cv2.resize(img, dsize=None, fx=0.2, fy=0.2)
-    # blur = cv2.GaussianBlur(resized,(3,3),0) # blurs the horizon too much
-    print('Resized shape:', resized.shape)
-    return resized
 
 def accelerated_search(img, m_initial, b_initial, max_score):
     m = m_initial
@@ -154,6 +146,7 @@ def accelerated_search(img, m_initial, b_initial, max_score):
         delta_m /= 2
         delta_b /= 2
     return m, b    
+
 
 def optimize_scores(img):
     """
