@@ -1,7 +1,7 @@
 
 import cv2 # for reading photos and videos
 import numpy as np
-from horizon import optimize_scores
+from horizon import optimize_global, optimize_local
 import plotter
 
 
@@ -36,7 +36,7 @@ def main():
     #'taxi_rotate.png runway1.JPG taxi_empty.jpg ocean sunset grass
     img = load_img('../img/taxi_rotate.png') 
     print('Optimize scores...')
-    answer, scores, grid = optimize_scores(img)
+    answer, scores, grid = optimize_global(img)
     # print('Max:', max_index)
 
     m = answer[0]
@@ -67,13 +67,16 @@ def video_demo():
         # print('Read new frame...')
         ret, frame = cap.read()
         count += 1
-        if count % 20 != 0:
+        if count % 5 != 0:
             continue
         if not ret:
             break
         img = cv2.resize(frame, dsize=None, fx=0.1, fy=0.1)
         print('Optimize...', img.shape)
-        answer, scores, grid = optimize_scores(img)
+        if count < 20:
+            answer, scores, grid = optimize_global(img)
+        else:
+            answer, scores, grid = optimize_local(img, m, b)
         m = answer[0]
         b = answer[1]
         label = 'Prediction m: ' + str(m) + ' b: ' + str(b)

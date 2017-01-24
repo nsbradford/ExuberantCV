@@ -58,6 +58,9 @@ def split_img_by_line(img, m, b):
     reshape1 = segment1.reshape(-1, segment1.shape[-1])
     reshape2 = segment2.reshape(-1, segment2.shape[-1])
     assert reshape1.shape[1] == reshape2.shape[1] == 3
+    # assert segment1.shape[0] > 1 and segment2.shape[0] > 1: 'Invalid hypothesis: ' + str(m) + ' ' + str(b)
+    if not (segment1.shape[0] > 1 and segment2.shape[0] > 1): 
+        print('Warning: Invalid hypothesis: ' + str(m) + ' ' + str(b))
     return (reshape1, reshape2)
 
 
@@ -73,8 +76,9 @@ def compute_variance_score(segment1, segment2):
      # linalg.eigh() is more stable than np.linalg.eig, but only for symmetric matrices
     assert segment1.shape[1] == segment2.shape[1] == 3
     # TODO shouldn't be wasting time on impossible hypotheses
-    if segment1.shape[0] < 2 or segment2.shape[0] < 2:
-        raise RuntimeError('Invalid hypothesis.')
+    if not (segment1.shape[0] > 1 and segment2.shape[0] > 1): 
+        # print('Warning: Invalid hypothesis: ' + str(m) + ' ' + str(b))
+        return -1.0
     cov1 = np.cov(segment1.T)
     cov2 = np.cov(segment2.T)
     assert cov1.shape == cov2.shape == (3,3)
@@ -141,25 +145,25 @@ def accelerated_search(img, m_initial, b_initial, max_score):
 
         # Adding my own "diagonal" guesses here
 
-        # est5 = score_line(img, m + delta_m, b + delta_b)
-        # if est5 > max_score:
-        #     max_m = m + delta_m
-        #     max_b = b + delta_b
+        est5 = score_line(img, m + delta_m, b + delta_b)
+        if est5 > max_score:
+            max_m = m + delta_m
+            max_b = b + delta_b
 
-        # est6 = score_line(img, m - delta_m, b - delta_b)
-        # if est6 > max_score:
-        #     max_m = m - delta_m
-        #     max_b = b - delta_b
+        est6 = score_line(img, m - delta_m, b - delta_b)
+        if est6 > max_score:
+            max_m = m - delta_m
+            max_b = b - delta_b
 
-        # est7 = score_line(img, m - delta_m, b + delta_b)
-        # if est7 > max_score:
-        #     max_m = m - delta_m
-        #     max_b = b + delta_b
+        est7 = score_line(img, m - delta_m, b + delta_b)
+        if est7 > max_score:
+            max_m = m - delta_m
+            max_b = b + delta_b
 
-        # est8 = score_line(img, m + delta_m, b - delta_b)
-        # if est8 > max_score:
-        #     max_m = m + delta_m
-        #     max_b = b - delta_b
+        est8 = score_line(img, m + delta_m, b - delta_b)
+        if est8 > max_score:
+            max_m = m + delta_m
+            max_b = b - delta_b
 
         # print(max_score, est1, est2, est3, est4) 
 
@@ -170,7 +174,7 @@ def accelerated_search(img, m_initial, b_initial, max_score):
     return m, b    
 
 
-def optimize_scores(img):
+def optimize_scores(img, slope_range, intercept_range):
     """
         Params:
             img
@@ -180,30 +184,32 @@ def optimize_scores(img):
             Grod
     """
     # convert (pitch angle, bank angle) to (slope, intercept)
-    # grid = []
     # pitch_range = 1.0 # TODO
     # bank_range = 1.0 # TOOD
-    # for i in range(pitch_range):
-    #     for j in range(bank_range):
-    #         grid.append(i, j)
-    # scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
-    # max_index = np.argmax(scores)
-    # answer = grid[max_index]
-    # old slope : for m in np.arange(- 2 * (img.shape[0] - 1), 2 * img.shape[1] - 1, 1.0):
-
     grid = []
-    for b in np.arange( 1, img.shape[0] - 2, 1.0):
-        for m in np.arange(-5, 5, 0.5):
+    for b in intercept_range:
+        for m in slope_range:
             grid.append((m, b))
-    
     scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
     # for i in range(len(scores)): print(i, ':', scores[i])
+    assert len(scores) > 0, 'Invalid slope and intercept ranges: ' + str(slope_range) + str(intercept_range)
     max_index = np.argmax(scores)
     answer = grid[max_index]
     m = answer[0]
     b = answer[1]
     print('\tInitial answer - m:', m, '  b:', b)
-    print('\tAccelerate search...')
+    # print('\tAccelerate search...')
     second_answer = accelerated_search(img, answer[0], answer[1], scores[max_index])
     print('\trefined_answer: - m:', second_answer[0], '  b:', second_answer[1])
     return second_answer, scores, grid
+
+
+def optimize_global(img):
+    return optimize_scores(img, 
+                        slope_range=np.arange(-3, 3, 0.25),
+                        intercept_range=np.arange( 1, img.shape[0] - 2, 0.5))
+
+def optimize_local(highres_img, m, b):
+    return optimize_scores(highres_img,
+                        slope_range=np.arange(-m - 0.25, m + 0.25, 0.05),
+                        intercept_range=np.arange(max(1.0, b - 4.0), min(highres_img.shape[0], b + 4.0), 0.5))
