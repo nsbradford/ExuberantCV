@@ -121,23 +121,45 @@ def accelerated_search(img, m_initial, b_initial, max_score):
 
         est1 = score_line(img, m + delta_m, b)
         if est1 > max_score:
-            max_m += delta_m
+            max_m  = m + delta_m
             max_b = b
 
         est2 = score_line(img, m - delta_m, b)
         if est2 > max_score:
-            max_m -= delta_m
+            max_m = m - delta_m
             max_b = b
 
         est3 = score_line(img, m, b + delta_b)
         if est3 > max_score:
             max_m = m
-            max_b += delta_b
+            max_b = b + delta_b
 
         est4 = score_line(img, m, b - delta_b)
         if est4 > max_score:
             max_m = m
-            max_b -= delta_b
+            max_b = b - delta_b
+
+        # Adding my own "diagonal" guesses here
+
+        # est5 = score_line(img, m + delta_m, b + delta_b)
+        # if est5 > max_score:
+        #     max_m = m + delta_m
+        #     max_b = b + delta_b
+
+        # est6 = score_line(img, m - delta_m, b - delta_b)
+        # if est6 > max_score:
+        #     max_m = m - delta_m
+        #     max_b = b - delta_b
+
+        # est7 = score_line(img, m - delta_m, b + delta_b)
+        # if est7 > max_score:
+        #     max_m = m - delta_m
+        #     max_b = b + delta_b
+
+        # est8 = score_line(img, m + delta_m, b - delta_b)
+        # if est8 > max_score:
+        #     max_m = m + delta_m
+        #     max_b = b - delta_b
 
         # print(max_score, est1, est2, est3, est4) 
 

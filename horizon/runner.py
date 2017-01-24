@@ -64,7 +64,7 @@ def video_demo():
     cap = cv2.VideoCapture('../../flying_turn.avi')
     count = 0
     while(cap.isOpened()):
-        print('Read new frame...')
+        # print('Read new frame...')
         ret, frame = cap.read()
         count += 1
         if count % 20 != 0:
@@ -80,7 +80,7 @@ def video_demo():
         prediction = add_line_to_frame(frame, m, b*10.0)#m=np.float32(0.0), b=np.float32(30.0))
         # cv2.imshow('frame',frame)
         cv2.imshow('label', prediction)
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cap.release()
     cv2.destroyAllWindows()
