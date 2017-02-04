@@ -51,11 +51,16 @@ def main():
     plotter.scatter3D(X, Y, Z) # scatter3D(X[::10], Y[::10], Z[::10])
 
 
-def add_line_to_frame(img, m, b):
+def add_line_to_frame(img, m, b, pitch, bank):
     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     pt1 = (0, b.astype(np.int64))
     pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
     cv2.line(img=rgb_img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    label = 'Pitch: ' + "{:.1f}".format(pitch) + ' degrees     Bank: ' + "{:.1f}".format(bank*100) + '%'
+    cv2.putText(rgb_img, label, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
+
     return rgb_img
 
 
@@ -72,17 +77,21 @@ def video_demo():
         if not ret:
             break
         img = cv2.resize(frame, dsize=None, fx=0.1, fy=0.1)
+        
         print('Optimize...', img.shape)
         if count < 20:
-            answer, scores, grid = optimize_global(img)
+            answer, scores, grid, pitch, bank = optimize_global(img)
         else:
-            answer, scores, grid = optimize_local(img, m, b)
+            answer, scores, grid, pitch, bank = optimize_local(img, m, b)
         m = answer[0]
         b = answer[1]
         label = 'Prediction m: ' + str(m) + ' b: ' + str(b)
-        prediction = add_line_to_frame(frame, m, b*10.0)#m=np.float32(0.0), b=np.float32(30.0))
+        prediction = add_line_to_frame(frame, m, b*10.0, pitch, bank)#m=np.float32(0.0), b=np.float32(30.0))
+        
         # cv2.imshow('frame',frame)
+        
         cv2.imshow('label', prediction)
+        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cap.release()

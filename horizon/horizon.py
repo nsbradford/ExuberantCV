@@ -21,6 +21,27 @@
 
 import cv2
 import numpy as np
+import math
+
+
+def convert_m_b_to_pitch_bank(m, b, sigma_below):
+    """ 'The pitch angle cannot be exactly calculated from an arbitrary horizon line, however
+            the pitch angle will be closely proportional to the percentage of the image above 
+            or below the line.'
+        Pitch angle (Theta) = size(ground) / size(ground) + size(sky)
+        Bank angle (Phi) = tan^-1(m)
+    """
+    pitch = math.degrees(math.atan(m))
+    bank = sigma_below
+    return pitch, bank
+
+
+def convert_pitch_roll_to_m_b(pitch, roll):
+    """ 
+        Limits of (pitch, roll) space are [-pi/2, pi/2] for pitch and [0%, 100%] for roll
+    """
+    m = math.tan(pitch)
+    return (m, b)
 
 
 def img_line_mask(rows, columns, m, b):
@@ -201,7 +222,13 @@ def optimize_scores(img, slope_range, intercept_range):
     # print('\tAccelerate search...')
     second_answer = accelerated_search(img, answer[0], answer[1], scores[max_index])
     print('\trefined_answer: - m:', second_answer[0], '  b:', second_answer[1])
-    return second_answer, scores, grid
+    
+    seg1, seg2 = split_img_by_line(img, m, b)
+    sigma_below = seg1.size / (seg1.size + seg2.size)
+    pitch, bank = convert_m_b_to_pitch_bank(m=second_answer[0], b=second_answer[1], sigma_below=sigma_below)
+    print('\tPitch:', pitch, '%  Bank:', bank, 'degrees')
+    
+    return second_answer, scores, grid, pitch, bank
 
 
 def optimize_global(img):
