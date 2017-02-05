@@ -1,7 +1,7 @@
 
 import cv2 # for reading photos and videos
 import numpy as np
-from horizon import optimize_real_time
+from horizon import optimize_real_time, optimize_global, convert_m_b_to_pitch_bank
 import plotter
 
 
@@ -34,15 +34,16 @@ def time_score():
 
 def main():
     #'taxi_rotate.png runway1.JPG taxi_empty.jpg ocean sunset grass
-    img, full_res = load_img('../img/taxi_rotate.png') 
+    # img, full_res = load_img('../img/taxi_rotate.png')
+    img, full_res = load_img('../img/grass_pitch_low.jpg')  
     print('Optimize scores...')
-    answer, scores, grid, pitch, bank = optimize_global(img, full_res)
+    answer, scores, grid, pitch, bank = optimize_global(img, full_res, 1.0)
     # print('Max:', max_index)
 
     m = answer[0]
     b = answer[1]
     print('m:', m, '  b:', b)
-    plotter.plot2D(full_res, scores, m, b*5)
+    plotter.plot2D(full_res, scores, m, b*5, pitch, bank)
 
     X = [option[0] for option in grid] # m
     Y = [option[1] for option in grid] # b
@@ -51,21 +52,9 @@ def main():
     plotter.scatter3D(X, Y, Z) # scatter3D(X[::10], Y[::10], Z[::10])
 
 
-def add_line_to_frame(img, m, b, pitch, bank):
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    pt1 = (0, b.astype(np.int64))
-    pt2 = img.shape[1] - 1, (m * (img.shape[1] - 1) + b).astype(np.int64)
-    cv2.line(img=rgb_img, pt1=pt1, pt2=pt2, color=(0, 0, 255), thickness=1)
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    label = 'Pitch: ' + "{:.1f}".format(pitch*100) + ' %     Bank: ' + "{:.1f}".format(bank) + ' degrees'
-    cv2.putText(rgb_img, label, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
-
-    return rgb_img
-
-
 def video_demo():
-    scaling_factor = 10.0
+    highres_scale = 0.5
+    scaling_factor = 0.2
 
     print('Load video...')
     cap = cv2.VideoCapture('../../flying_turn.avi')
@@ -80,14 +69,14 @@ def video_demo():
         #     continue
         if not ret:
             break
-        highres = cv2.resize(frame, dsize=None, fx=1.0/2, fy=1.0/2)
-        img = cv2.resize(frame, dsize=None, fx=1.0/scaling_factor, fy=1.0/scaling_factor)
+        highres = cv2.resize(frame, dsize=None, fx=1.0 * highres_scale, fy=1.0 * highres_scale)
+        img = cv2.resize(highres, dsize=None, fx=1.0 * scaling_factor, fy=1.0 * scaling_factor)
 
-        answer, scores, grid, pitch, bank = optimize_real_time(img, highres, m, b)
+        answer, scores, grid, pitch, bank = optimize_real_time(img, img, m, b, 1.0) #scaling_factor)
         m = answer[0]
         b = answer[1]
         # label = 'Prediction m: ' + str(m) + ' b: ' + str(b)
-        prediction = add_line_to_frame(frame, m, b*scaling_factor, pitch, bank)
+        prediction = plotter.add_line_to_frame(frame, m, b / (highres_scale * scaling_factor), pitch, bank)
         #m=np.float32(0.0), b=np.float32(30.0))
         
         # cv2.imshow('frame',frame)
@@ -101,5 +90,5 @@ def video_demo():
 
 if __name__ == '__main__':
     # time_score()2
-    # main()
+    main()
     video_demo()

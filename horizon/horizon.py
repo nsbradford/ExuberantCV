@@ -31,8 +31,32 @@ def convert_m_b_to_pitch_bank(m, b, sigma_below):
         Pitch angle (Theta) = size(ground) / size(ground) + size(sky)
         Bank angle (Phi) = tan^-1(m)
     """
-    pitch = sigma_below
+
     bank = math.degrees(math.atan(m))
+    
+    # method from original paper
+    pitch = sigma_below
+
+    # method from http://eprints.qut.edu.au/12839/1/3067a485.pdf
+    # u = 5
+    # v = m * u + b
+    # f = 35.0
+    # inner = (u * math.sin(bank) + v * math.sin(bank)) / f
+    # # print(math.atan(inner), math.atan(- inner), math.atan(inner) - math.atan(- inner))
+    # pitch = math.atan(inner)
+    # print(inner, pitch)
+
+    # method from https://www.researchgate.net/publication/
+    #   220143231_Sub-sampling_Real-time_vision_for_micro_air_vehicles
+    # images are 29 x 35, or 36 x 64
+    # h = 29 # height of image
+    # w = 35.0
+    # h = 20
+    # w = 35
+    # y = m * (w / 2.0) + b # y-coordinate of line at half of the screen
+    # FOVv = 40 # camera's vertical field of view
+    # pitch = y * FOVv / h
+
     return pitch, bank
 
 
@@ -41,17 +65,16 @@ def convert_pitch_roll_to_m_b(pitch, bank):
         Limits of (pitch, roll) space are [-pi/2, pi/2] for pitch and [0%, 100%] for roll
     """
     m = math.tan(pitch)
-    # b = 
-
+    b = None
     return (m, b)
 
 
 def img_line_mask(rows, columns, m, b):
     """ Params:
-            rows
-            columns
-            m
-            b
+            rows (int)
+            columns (int)
+            m (double)
+            b (double)
         Returns:
             rows x columns np.array boolean mask with True for all values above the line
     """
@@ -129,7 +152,7 @@ def score_line(img, m, b):
 
 def score_grid(img, grid):
     scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
-    assert len(scores) > 0, 'Invalid slope and intercept ranges: ' + str(slope_range) + str(intercept_range)
+    assert len(scores) > 0, 'Invalid slope and intercept ranges: '
     max_index = np.argmax(scores)
     m, b = grid[max_index]
     return m, b, scores, grid, scores[max_index]
@@ -173,7 +196,7 @@ def print_results(m, b, m2, b2):
     print('\tAccelerate search...')
     print('\tRefined_answer: - m:', m2, '  b:', b2)
 
-def optimize_scores(img, highres, slope_range, intercept_range, scaling_factor=1.0):
+def optimize_scores(img, highres, slope_range, intercept_range, scaling_factor):
     """
         Params:
             img
@@ -192,19 +215,22 @@ def optimize_scores(img, highres, slope_range, intercept_range, scaling_factor=1
     m2, b2 = accelerated_search(img, m, b * scaling_factor, max_score)
     b2 /= scaling_factor
     pitch, bank = convert_m_b_to_pitch_bank(m=m2, b=b2, sigma_below=get_simga_below(img, m2, b2))
-    print('\tPitch:', pitch, '%  Bank:', bank, 'degrees')
+    # print('\tPitch:', pitch, '%  Bank:', bank, 'degrees')
     return (m2, b2), scores, grid, pitch, bank
 
 
-def optimize_global(img, highres):
+def optimize_global(img, highres, scaling_factor):
     return optimize_scores(img, highres,
                         slope_range=np.arange(-4, 4, 0.25),
-                        intercept_range=np.arange( 1, img.shape[0] - 2, 0.5))
+                        intercept_range=np.arange( 1, img.shape[0] - 2, 0.5),
+                        scaling_factor=scaling_factor)
 
-def optimize_local(img, highres, m, b):
+def optimize_local(img, highres, m, b, scaling_factor):
     return optimize_scores(img, highres,
                         slope_range=np.arange(m - 0.5, m + 0.5, 0.05),
-                        intercept_range=np.arange(max(1.0, b - 4.0), min(img.shape[0], b + 4.0), 0.5))
+                        intercept_range=np.arange(max(1.0, b - 4.0), min(img.shape[0], b + 4.0), 0.5),
+                        scaling_factor=scaling_factor)
 
-def optimize_real_time(img, highres, m, b):
-    return optimize_global(img, highres) if not m or not b else optimize_local(img, highres, m, b)
+def optimize_real_time(img, highres, m, b, scaling_factor):
+    return (optimize_global(img, highres, scaling_factor) if not m or not b 
+        else optimize_local(img, highres, m, b, scaling_factor))

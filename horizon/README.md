@@ -15,7 +15,7 @@ Real-time horizon detection with computer vision in Python, for UAV applications
 * Search space in [pitch, bank] instead of [slope, intercept] form
 * Debug:
 	* Slowdown when horizon is nearly flat
-	* Why large bank angles isn't found properly
+	* Why large bank angles isn't found properly? Because the slope-intercept ranges are limited
 * Cleaning and packaging
 * Kalman filtering
 * Extreme attitude detection (when no horizon is visible)
