@@ -31,16 +31,18 @@ def convert_m_b_to_pitch_bank(m, b, sigma_below):
         Pitch angle (Theta) = size(ground) / size(ground) + size(sky)
         Bank angle (Phi) = tan^-1(m)
     """
-    pitch = math.degrees(math.atan(m))
-    bank = sigma_below
+    pitch = sigma_below
+    bank = math.degrees(math.atan(m))
     return pitch, bank
 
 
-def convert_pitch_roll_to_m_b(pitch, roll):
+def convert_pitch_roll_to_m_b(pitch, bank):
     """ 
         Limits of (pitch, roll) space are [-pi/2, pi/2] for pitch and [0%, 100%] for roll
     """
     m = math.tan(pitch)
+    # b = 
+
     return (m, b)
 
 
@@ -69,7 +71,6 @@ def split_img_by_line(img, m, b):
         Returns:
             (arr1, arr2): two np.arrays with 3 columns (RGB) and N rows (one for each pixel)
     """
-    # print('\tLine:', m, b)
     mask = img_line_mask(rows=img.shape[0], columns=img.shape[1], m=m, b=b)
     assert len(mask.shape) == 2
     assert mask.shape[0] == img.shape[0]
@@ -79,9 +80,8 @@ def split_img_by_line(img, m, b):
     reshape1 = segment1.reshape(-1, segment1.shape[-1])
     reshape2 = segment2.reshape(-1, segment2.shape[-1])
     assert reshape1.shape[1] == reshape2.shape[1] == 3
-    # assert segment1.shape[0] > 1 and segment2.shape[0] > 1: 'Invalid hypothesis: ' + str(m) + ' ' + str(b)
     if not (segment1.shape[0] > 1 and segment2.shape[0] > 1): 
-        print('Warning: Invalid hypothesis: ' + str(m) + ' ' + str(b))
+        print('!!    Warning: Invalid hypothesis: ' + str(m) + ' ' + str(b))
     return (reshape1, reshape2)
 
 
@@ -91,31 +91,26 @@ def compute_variance_score(segment1, segment2):
             segment2 (np.array): n x 3, where n is number of pixels in first segment
         Returns:
             F (np.double): the score for these two segments (higher = better line hypothesis)
+        Note that linalg.eigh() is more stable than np.linalg.eig, but only for symmetric matrices.
+
+        When the covariance matrix is nearly singular (due to color issues), the determinant
+        will also be driven to zero. Thus, we introduce additional terms to supplement the
+        score when this case occurs (the determinant dominates it in the normal case):
+          where g=GROUND and s=SKY (covariance matrices) 
+          F = [det(G) + det(S) + (eigG1 + eigG1 + eigG1)^2 + (eigS1 + eigS1 + eigS1)^2]^-1
     """
-    # print('Covariance matrices: )
-    # print(np.cov(seg1), np.cov(seg2))
-     # linalg.eigh() is more stable than np.linalg.eig, but only for symmetric matrices
     assert segment1.shape[1] == segment2.shape[1] == 3
-    # TODO shouldn't be wasting time on impossible hypotheses
-    if not (segment1.shape[0] > 1 and segment2.shape[0] > 1): 
-        # print('Warning: Invalid hypothesis: ' + str(m) + ' ' + str(b))
+    if not (segment1.shape[0] > 1 and segment2.shape[0] > 1):
         return -1.0
     cov1 = np.cov(segment1.T)
     cov2 = np.cov(segment2.T)
     assert cov1.shape == cov2.shape == (3,3)
-    # print('Covariance matrices:', cov1, cov2)
-    evals1, evecs1 = np.linalg.eig(cov1)
-    evals2, evecs2 = np.linalg.eig(cov2)
-
-    # When the covariance matrix is nearly singular (due to color issues), the determinant
-    # will also be driven to zero. Thus, we introduce additional terms to supplement the
-    # score when this case occurs (the determinant dominates it in the normal case):
-    #   where g=GROUND and s=SKY (covariance matrices) 
-    #   F = [det(G) + det(S) + (eigG1 + eigG1 + eigG1)^2 + (eigS1 + eigS1 + eigS1)^2]^-1
-    det1 = np.linalg.det(cov1)
-    det2 = np.linalg.det(cov2)
-    F =  det1 + det2 + (np.sum(evals1) ** 2) + (np.sum(evals2) ** 2)
-    return F ** -1
+    evals1, evecs1 = np.linalg.eigh(cov1)
+    evals2, evecs2 = np.linalg.eigh(cov2)
+    det1 = evals1.prod() #np.linalg.det(cov1)
+    det2 = evals2.prod() #np.linalg.det(cov2)
+    score =  det1 + det2 + (np.sum(evals1) ** 2) + (np.sum(evals2) ** 2)
+    return score ** -1
 
 
 def score_line(img, m, b):
@@ -132,111 +127,84 @@ def score_line(img, m, b):
     return score
 
 
-def accelerated_search(img, m_initial, b_initial, max_score):
-    m = m_initial
-    b = b_initial
+def score_grid(img, grid):
+    scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
+    assert len(scores) > 0, 'Invalid slope and intercept ranges: ' + str(slope_range) + str(intercept_range)
+    max_index = np.argmax(scores)
+    m, b = grid[max_index]
+    return m, b, scores, grid, scores[max_index]
+
+
+def accelerated_search(img, m, b, current_score):
     max_iter = 10
-    delta_m = 0.5
+    delta_m = 0.25
     delta_b = 1.0
+    delta_factor = 0.75
     for i in range(max_iter):
-        # print('\t', delta_m, m, b)
-        max_score = score_line(img, m, b)
-        max_m = m
-        max_b = b
-
-        est1 = score_line(img, m + delta_m, b)
-        if est1 > max_score:
-            max_m  = m + delta_m
-            max_b = b
-
-        est2 = score_line(img, m - delta_m, b)
-        if est2 > max_score:
-            max_m = m - delta_m
-            max_b = b
-
-        est3 = score_line(img, m, b + delta_b)
-        if est3 > max_score:
-            max_m = m
-            max_b = b + delta_b
-
-        est4 = score_line(img, m, b - delta_b)
-        if est4 > max_score:
-            max_m = m
-            max_b = b - delta_b
-
-        # Adding my own "diagonal" guesses here
-
-        est5 = score_line(img, m + delta_m, b + delta_b)
-        if est5 > max_score:
-            max_m = m + delta_m
-            max_b = b + delta_b
-
-        est6 = score_line(img, m - delta_m, b - delta_b)
-        if est6 > max_score:
-            max_m = m - delta_m
-            max_b = b - delta_b
-
-        est7 = score_line(img, m - delta_m, b + delta_b)
-        if est7 > max_score:
-            max_m = m - delta_m
-            max_b = b + delta_b
-
-        est8 = score_line(img, m + delta_m, b - delta_b)
-        if est8 > max_score:
-            max_m = m + delta_m
-            max_b = b - delta_b
-
-        # print(max_score, est1, est2, est3, est4) 
-
-        m = max_m
-        b = max_b
-        delta_m /= 2
-        delta_b /= 2
+        # print('\tDelta', delta_m, delta_b, 'M&B', m, b)
+        grid = [
+                    (m + delta_m, b),
+                    (m - delta_m, b),
+                    (m, b + delta_b),
+                    (m, b - delta_b),
+                    (m + delta_m, b + delta_b),
+                    (m - delta_m, b - delta_b),
+                    (m - delta_m, b + delta_b),
+                    (m + delta_m, b - delta_b),
+            ]
+        mTmp, bTmp, scores, grid, max_score = score_grid(img, grid)
+        if max_score >= current_score:
+            m = mTmp
+            b = bTmp
+        # else:
+        #     print ('Reached a peak?')
+        delta_m *= delta_factor
+        delta_b *= delta_factor
     return m, b    
 
 
-def optimize_scores(img, slope_range, intercept_range):
+
+def get_simga_below(img, m, b):
+    seg1, seg2 = split_img_by_line(img, m, b)
+    return seg1.size / (seg1.size + seg2.size)
+
+def print_results(m, b, m2, b2):
+    print('\tInitial answer - m:', m, '  b:', b)
+    print('\tAccelerate search...')
+    print('\tRefined_answer: - m:', m2, '  b:', b2)
+
+def optimize_scores(img, highres, slope_range, intercept_range, scaling_factor=1.0):
     """
         Params:
             img
         Returns:
             Answer: Tuple of (m, b)
             Scores (list of np.double)
-            Grod
+            Grid
     """
-    # convert (pitch angle, bank angle) to (slope, intercept)
-    # pitch_range = 1.0 # TODO
-    # bank_range = 1.0 # TOOD
-    grid = []
-    for b in intercept_range:
-        for m in slope_range:
-            grid.append((m, b))
-    scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
-    # for i in range(len(scores)): print(i, ':', scores[i])
-    assert len(scores) > 0, 'Invalid slope and intercept ranges: ' + str(slope_range) + str(intercept_range)
-    max_index = np.argmax(scores)
-    answer = grid[max_index]
-    m = answer[0]
-    b = answer[1]
-    print('\tInitial answer - m:', m, '  b:', b)
-    # print('\tAccelerate search...')
-    second_answer = accelerated_search(img, answer[0], answer[1], scores[max_index])
-    print('\trefined_answer: - m:', second_answer[0], '  b:', second_answer[1])
-    
-    seg1, seg2 = split_img_by_line(img, m, b)
-    sigma_below = seg1.size / (seg1.size + seg2.size)
-    pitch, bank = convert_m_b_to_pitch_bank(m=second_answer[0], b=second_answer[1], sigma_below=sigma_below)
+    print('Optimize...', img.shape, highres.shape)
+    grid = [(m, b) for b in intercept_range for m in slope_range]    
+    # scores = list(map(lambda x: score_line(img, x[0], x[1]), grid))
+    # assert len(scores) > 0, 'Invalid slope and intercept ranges: ' + str(slope_range) + str(intercept_range)
+    # max_index = np.argmax(scores)
+    # m, b = grid[max_index]
+    m, b, scores, grid, max_score = score_grid(img, grid)
+    m2, b2 = accelerated_search(img, m, b * scaling_factor, max_score)
+    b2 /= scaling_factor
+    pitch, bank = convert_m_b_to_pitch_bank(m=m2, b=b2, sigma_below=get_simga_below(img, m2, b2))
     print('\tPitch:', pitch, '%  Bank:', bank, 'degrees')
-    
-    return second_answer, scores, grid, pitch, bank
+    return (m2, b2), scores, grid, pitch, bank
 
 
-def optimize_global(img):
-    return optimize_scores(img, 
-                        slope_range=np.arange(-3, 3, 0.25),
+def optimize_global(img, highres):
+    return optimize_scores(img, highres,
+                        slope_range=np.arange(-4, 4, 0.25),
                         intercept_range=np.arange( 1, img.shape[0] - 2, 0.5))
 
-def optimize_local(highres_img, m, b):
-    return optimize_scores(highres_img,
-                        slope_range=np.arange(-m - 0.25, m + 0.25, 0.05),
-                        intercept_range=np.arange(max(1.0, b - 4.0), min(highres_img.shape[0], b + 4.0), 0.5))
+def optimize_local(img, highres, m, b):
+    return optimize_scores(img, highres,
+                        slope_range=np.arange(m - 0.5, m + 0.5, 0.05),
+                        intercept_range=np.arange(max(1.0, b - 4.0), min(img.shape[0], b + 4.0), 0.5))
+
+def optimize_real_time(img, highres, m, b):
+    return optimize_global(img, highres) if not m or not b else optimize_local(img, highres, m, b)
