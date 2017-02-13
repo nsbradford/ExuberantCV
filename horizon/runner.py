@@ -57,7 +57,7 @@ def video_demo():
     scaling_factor = 0.2
 
     print('Load video...')
-    cap = cv2.VideoCapture('../../flying_turn.avi')
+    cap = cv2.VideoCapture('../../flying_turn.avi') #framerate of 25
     count = 0
     m = None
     b = None
@@ -65,8 +65,8 @@ def video_demo():
         # print('Read new frame...')
         ret, frame = cap.read()
         count += 1
-        # if count % 5 != 0:
-        #     continue
+        if count % 5 != 0:
+            continue
         if not ret:
             break
         highres = cv2.resize(frame, dsize=None, fx=1.0 * highres_scale, fy=1.0 * highres_scale)

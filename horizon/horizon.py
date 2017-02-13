@@ -37,6 +37,21 @@ def convert_m_b_to_pitch_bank(m, b, sigma_below):
     # method from original paper
     pitch = sigma_below
 
+    # method from 
+    # 'Road environment modeling using robust perspective analysis and recursive Bayesian segmentation'
+    # focal_x = 64.4 #
+    # focal_y = 37.2 #
+    # s = 0
+    # x0 = 25 / 2 # image center, in pix
+    # y0 = 52 / 2 # image center, in pix
+    # cam_calibration = np.array([[focal_x, s, x0], 
+    #                             [0, focal_y, y0],
+    #                             [0, 0, 1]])
+    # v = np.array([x0, b, 1])
+    # v_prime = np.linalg.solve(cam_calibration, v)
+    # print(v_prime, b)
+    # pitch = math.atan(v[1])
+
     # method from http://eprints.qut.edu.au/12839/1/3067a485.pdf
     # u = 5
     # v = m * u + b

@@ -6,13 +6,13 @@
 
 """
 
-print 'import...'
+print('import...')
 import cv2
 import numpy as np
 from plotter import plot2
 
 def perspective():
-    print 'load img...'
+    print('load img...')
     img = cv2.imread('../img/runway1.jpg')
     rows,cols,ch = img.shape    
 
@@ -21,7 +21,7 @@ def perspective():
     # 382, 48 top left
     # 411, 48 top right
 
-    print 'transform...'
+    print('transform...')
     #pts1 = np.float32([[56,65],[368,52],[28,387],[389,390]])
     pts1 = np.float32([[382, 48], [411, 48], [292, 565], [565, 565]])
     pts2 = np.float32([[0,0],[100,0],[0,1600],[100,1600]])    
