@@ -49,7 +49,7 @@ def extractColor(img):
 
     kernel = np.ones((5,5), np.uint8)
     dilated = cv2.dilate(res, kernel, iterations=5)
-    morphed = cv2.erode(dilated, kernel, iterations=5)
+    morphed = cv2.erode(dilated, kernel, iterations=7)
     return morphed
 
 
@@ -142,7 +142,7 @@ def video_demo(highres_scale=0.5, scaled_height=540):
         img = resizeFrame(frame, highres_scale)
         perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
         
-        fgmask = fgbg.apply(perspective, learningRate=0.5)
+        fgmask = fgbg.apply(perspective, learningRate=0.2)
         # mask = cv2.bitwise_not(fgmask)
         # background = cv2.bitwise_and(perspective, perspective, mask=mask)
         background = fgbg.getBackgroundImage()
@@ -152,7 +152,10 @@ def video_demo(highres_scale=0.5, scaled_height=540):
         morphed = dilateAndErode(colored)
         lines = addLines(morphed)
         addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-        cv2.imshow('combined', np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)))
+        top = np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR)))
+        bottom = np.hstack((colored, lines))
+        cv2.imshow('combined', np.vstack((top, bottom)))
+        # cv2.imshow('combined', np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)))
 
         if cv2.waitKey(1) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
