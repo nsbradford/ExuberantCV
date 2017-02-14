@@ -3,8 +3,9 @@
     Nicholas S. Bradford
     12 Feb 2017
 
-    Notes:
-        Color doesn't really seem to work; inaccurate on areas not directly in front of plane 
+    TODO:
+        -RANSAC for curve/spline-fitting
+        -Kalman filter (use pykalman)
 
 """
 
@@ -81,7 +82,7 @@ def addLines(img):
             cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
     return copy
 
-def dilateAndErode(original):
+def skeleton(original):
     # kernel = np.ones((10,10),np.uint8)
     # closed = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
     # return closed
@@ -131,6 +132,17 @@ def openVideo():
     # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
     return cap
 
+def addLabels(per, mask, colored, lines):
+    cv2.putText(per, 'Perspective', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(colored, 'Yellow+dilation+erosion', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    return per, mask, colored, lines
+
+def showFour(per, mask, colored, lines):
+    top = np.hstack((per, mask))
+    bottom = np.hstack((colored, lines))
+    cv2.imshow('combined', np.vstack((top, bottom)))
 
 def video_demo(highres_scale=0.5, scaled_height=540):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
@@ -139,25 +151,24 @@ def video_demo(highres_scale=0.5, scaled_height=540):
     cap = openVideo()
     while(cap.isOpened()):
         ret, frame = cap.read()
+        if not ret:
+            break;
         img = resizeFrame(frame, highres_scale)
         perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
         
         fgmask = fgbg.apply(perspective, learningRate=0.2)
-        # mask = cv2.bitwise_not(fgmask)
-        # background = cv2.bitwise_and(perspective, perspective, mask=mask)
         background = fgbg.getBackgroundImage()
 
         # edges = extractEdges(perspective)
         colored = extractColor(background)
-        morphed = dilateAndErode(colored)
+        morphed = skeleton(colored)
         lines = addLines(morphed)
         addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-        top = np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR)))
-        bottom = np.hstack((colored, lines))
-        cv2.imshow('combined', np.vstack((top, bottom)))
+        per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)
+        showFour(per, mask, col, lin)
         # cv2.imshow('combined', np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)))
 
-        if cv2.waitKey(1) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
+        if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
     cv2.destroyAllWindows()
