@@ -14,11 +14,21 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline, CubicSpline
 
 
-def addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight):
-    cv2.circle(img, topLeft, radius=5, color=(0,0,255))
-    cv2.circle(img, topRight, radius=5, color=(0,0,255))
-    cv2.circle(img, bottomLeft, radius=5, color=(0,0,255))
-    cv2.circle(img, bottomRight, radius=5, color=(0,0,255))
+def getPerspectivePoints(highres_scale):
+    original_width = 1920
+    original_height = 1080
+    scaled_width = int(highres_scale * original_width)
+    scaled_height = int(highres_scale * original_height)
+    horizon_height = int(scaled_height / 3.0)
+    wing_height = int(scaled_height * 2.0 / 3.0)
+    right_width = int(scaled_width * 2.0 / 3.0)
+    left_width = int(scaled_width / 3.0)
+    topLeft = (int(scaled_width / 2.0 - 50), horizon_height + 50)
+    topRight = (int(scaled_width / 2.0 + 50), horizon_height + 50)
+    bottomLeft = (left_width, wing_height)
+    bottomRight = (right_width, wing_height)
+    return topLeft, topRight, bottomLeft, bottomRight
+
 
 def getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight):
     # pts1 = np.float32([[382, 48], [411, 48], [292, 565], [565, 565]])
@@ -27,6 +37,14 @@ def getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight):
     pts2 = np.float32([[0,0], [540,0], [0,540], [540,540]])   
     M = cv2.getPerspectiveTransform(pts1,pts2)  
     return M
+
+
+def addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight):
+    cv2.circle(img, topLeft, radius=5, color=(0,0,255))
+    cv2.circle(img, topRight, radius=5, color=(0,0,255))
+    cv2.circle(img, bottomLeft, radius=5, color=(0,0,255))
+    cv2.circle(img, bottomRight, radius=5, color=(0,0,255))
+
 
 
 def extractColor(img):
@@ -136,21 +154,6 @@ def fitCurve(img):
     return img
 
 
-def getPerspectivePoints(highres_scale):
-    original_width = 1920
-    original_height = 1080
-    scaled_width = int(highres_scale * original_width)
-    scaled_height = int(highres_scale * original_height)
-    horizon_height = int(scaled_height / 3.0)
-    wing_height = int(scaled_height * 2.0 / 3.0)
-    right_width = int(scaled_width * 2.0 / 3.0)
-    left_width = int(scaled_width / 3.0)
-    topLeft = (int(scaled_width / 2.0 - 50), horizon_height + 50)
-    topRight = (int(scaled_width / 2.0 + 50), horizon_height + 50)
-    bottomLeft = (left_width, wing_height)
-    bottomRight = (right_width, wing_height)
-    return topLeft, topRight, bottomLeft, bottomRight
-
 
 def resizeFrame(img, scale):
     return cv2.resize(img, dsize=None, fx=scale, fy=scale)
@@ -172,13 +175,40 @@ def addLabels(per, mask, colored, lines):
     return per, mask, colored, lines
 
 
-def showFour(per, mask, colored, lines):
-    top = np.hstack((per, mask))
-    bottom = np.hstack((colored, lines))
+def showSix(img, empty, per, mask, colored, lines):
+    top = np.hstack((img, per, mask))
+    bottom = np.hstack((empty, colored, lines))
     cv2.imshow('combined', np.vstack((top, bottom)))
 
 
-def video_demo(highres_scale=0.5, scaled_height=540):
+def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
+    topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
+    perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
+    fgmask = fgbg.apply(perspective, learningRate=0.2)
+    background = fgbg.getBackgroundImage()
+    # edges = extractEdges(perspective)
+    colored = extractColor(background)
+    morphed = skeleton(colored)
+    curve = addLines(morphed)
+    # curve = fitCurve(morphed)
+    addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
+    per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, curve)
+    showSix(img, np.zeros(img.shape, np.uint8), per, mask, col, lin)
+
+
+def pictureDemo(path, highres_scale=0.5, scaled_height=540):
+    topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
+    perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
+    fgbg = cv2.createBackgroundSubtractorMOG2()
+    prefix = '../img/taxi/'
+    frame = cv2.imread(prefix + path)
+    frame = resizeFrame(frame, 0.5)
+    img = resizeFrame(frame, highres_scale)
+    laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale)
+    cv2.waitKey(3000)
+
+
+def videoDemo(highres_scale=0.5, scaled_height=540):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
     fgbg = cv2.createBackgroundSubtractorMOG2()
@@ -188,21 +218,7 @@ def video_demo(highres_scale=0.5, scaled_height=540):
         if not ret:
             break;
         img = resizeFrame(frame, highres_scale)
-        perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
-        
-        fgmask = fgbg.apply(perspective, learningRate=0.2)
-        background = fgbg.getBackgroundImage()
-
-        # edges = extractEdges(perspective)
-        colored = extractColor(background)
-        morphed = skeleton(colored)
-        # curve = addLines(morphed)
-        curve = fitCurve(morphed)
-        addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-        per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, curve)
-        showFour(per, mask, col, lin)
-        # cv2.imshow('combined', np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)))
-
+        laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale)
         if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
@@ -210,4 +226,7 @@ def video_demo(highres_scale=0.5, scaled_height=540):
 
 
 if __name__ == '__main__':
-    video_demo()
+    pictureDemo('taxi_straight.png')
+    pictureDemo('taxi_side.png')
+    pictureDemo('taxi_curve.png')
+    videoDemo()
