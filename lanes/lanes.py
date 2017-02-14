@@ -11,6 +11,7 @@
 
 import cv2 # for reading photos and videos
 import numpy as np
+from scipy.interpolate import UnivariateSpline, CubicSpline
 
 
 def addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight):
@@ -60,6 +61,29 @@ def extractEdges(img):
     return bgrEdges
 
 
+def skeleton(original):
+    # kernel = np.ones((10,10),np.uint8)
+    # closed = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    # return closed
+    gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+    size = np.size(gray)
+    skel = np.zeros(gray.shape,np.uint8)
+    ret,img = cv2.threshold(gray,20,255,0)
+    element = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
+    done = False
+    while not done:
+        eroded = cv2.erode(img,element)
+        temp = cv2.dilate(eroded,element)
+        temp = cv2.subtract(img,temp)
+        skel = cv2.bitwise_or(skel,temp)
+        img = eroded.copy()
+        zeros = size - cv2.countNonZero(img)
+        if zeros==size:
+            done = True
+    colorSkel = cv2.cvtColor(skel, cv2.COLOR_GRAY2BGR)
+    return colorSkel
+
+
 def addLines(img):
     copy = img.copy()
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -82,27 +106,34 @@ def addLines(img):
             cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
     return copy
 
-def skeleton(original):
-    # kernel = np.ones((10,10),np.uint8)
-    # closed = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-    # return closed
-    gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    size = np.size(gray)
-    skel = np.zeros(gray.shape,np.uint8)
-    ret,img = cv2.threshold(gray,20,255,0)
-    element = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
-    done = False
-    while not done:
-        eroded = cv2.erode(img,element)
-        temp = cv2.dilate(eroded,element)
-        temp = cv2.subtract(img,temp)
-        skel = cv2.bitwise_or(skel,temp)
-        img = eroded.copy()
-        zeros = size - cv2.countNonZero(img)
-        if zeros==size:
-            done = True
-    colorSkel = cv2.cvtColor(skel, cv2.COLOR_GRAY2BGR)
-    return colorSkel
+
+def fitCurve(img):
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    y, x = np.nonzero(gray)
+    # print(x.size)
+    if x.size < 50:
+        print('\tWARNING: Not enough points to fit curve')
+        return img
+
+    # TODO x argument must be "strictly" increasing, but this prevents us from handling
+    #   splines that are nearly vertical. We'll need a whole new way to fit the curve.
+    
+    sortX, sortY = zip(*sorted(zip(x, y)))
+    print(sortX)
+
+    curve = UnivariateSpline(x=sortX, y=sortY, k=3, s=None) #CubicSpline
+    xs = np.arange(0, img.shape[1], 10)
+    ys = curve(xs)
+    for i in range(xs.size):
+        if not np.isnan(ys[i]) and 0 < ys[i] < img.shape[0]:
+            pt = xs[i], int(ys[i])
+            print(ys[i])
+            cv2.circle(img, pt, radius=5, color=(0,0,255))
+            # pt1 = xs[i], int(ys[i])
+            # pt2 = xs[i + 1], int(ys[i + 1])
+            # print(pt1, pt2)
+            # cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0,0,255), thickness=2)
+    return img
 
 
 def getPerspectivePoints(highres_scale):
@@ -132,6 +163,7 @@ def openVideo():
     # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
     return cap
 
+
 def addLabels(per, mask, colored, lines):
     cv2.putText(per, 'Perspective', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
@@ -139,10 +171,12 @@ def addLabels(per, mask, colored, lines):
     cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     return per, mask, colored, lines
 
+
 def showFour(per, mask, colored, lines):
     top = np.hstack((per, mask))
     bottom = np.hstack((colored, lines))
     cv2.imshow('combined', np.vstack((top, bottom)))
+
 
 def video_demo(highres_scale=0.5, scaled_height=540):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
@@ -162,9 +196,10 @@ def video_demo(highres_scale=0.5, scaled_height=540):
         # edges = extractEdges(perspective)
         colored = extractColor(background)
         morphed = skeleton(colored)
-        lines = addLines(morphed)
+        # curve = addLines(morphed)
+        curve = fitCurve(morphed)
         addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-        per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)
+        per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, curve)
         showFour(per, mask, col, lin)
         # cv2.imshow('combined', np.hstack((perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, lines)))
 
