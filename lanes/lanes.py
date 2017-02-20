@@ -51,39 +51,38 @@ def extractColor(img):
     # green = np.uint8([[[0,255,0 ]]])
     # hsv_green = cv2.cvtColor(green,cv2.COLOR_BGR2HSV)
     # print hsv_green # [[[ 60 255 255]]]
-
-    # Convert BGR to HSV
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    # define range of blue color in HSV
     # yellow: cvScalar(20, 100, 100), cvScalar(30, 255, 255)
+
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     lower_yellow = np.array([10, 70, 30])
     upper_yellow = np.array([60, 255, 255])
-
-    # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
-    # Bitwise-AND mask and original image
-    res = cv2.bitwise_and(img, img, mask= mask)
-
+    mask = cv2.inRange(hsv, lower_yellow, upper_yellow) # Threshold the HSV image to get only blue colors
+    res = cv2.bitwise_and(img, img, mask= mask) # Bitwise-AND mask and original image
     # answer = cv2.cvtColor(res, cv2.COLOR_HSV2BGR)
+    return res
 
+
+# def extractEdges(img):
+#     edges = cv2.Canny(img, 20, 100, apertureSize=3)
+#     bgrEdges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+#     return bgrEdges
+
+def dilateAndErode(img, n_dilations, n_erosions):
     kernel = np.ones((5,5), np.uint8)
-    dilated = cv2.dilate(res, kernel, iterations=5)
-    morphed = cv2.erode(dilated, kernel, iterations=7)
+    dilated = cv2.dilate(img, kernel, iterations=n_dilations)
+    morphed = cv2.erode(dilated, kernel, iterations=n_erosions)
     return morphed
-
-
-def extractEdges(img):
-    edges = cv2.Canny(img, 20, 100, apertureSize=3)
-    bgrEdges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    return bgrEdges
-
 
 def skeleton(original):
     # kernel = np.ones((10,10),np.uint8)
     # closed = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
     # return closed
-    gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+
+    kernel = np.ones((5,5), np.uint8)
+    dilated = cv2.dilate(original, kernel, iterations=0)
+    morphed = cv2.erode(dilated, kernel, iterations=0)
+
+    gray = cv2.cvtColor(morphed, cv2.COLOR_BGR2GRAY)
     size = np.size(gray)
     skel = np.zeros(gray.shape,np.uint8)
     ret,img = cv2.threshold(gray,20,255,0)
@@ -128,6 +127,9 @@ def addLines(img):
 def fitCurve(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     y, x = np.nonzero(gray)
+
+    # for xcoord, ycoord in zip(x, y):
+    #     cv2.circle(img, (xcoord, ycoord), radius=3, color=(0,255,0))
     # print(x.size)
     if x.size < 50:
         print('\tWARNING: Not enough points to fit curve')
@@ -136,23 +138,22 @@ def fitCurve(img):
     # TODO x argument must be "strictly" increasing, but this prevents us from handling
     #   splines that are nearly vertical. We'll need a whole new way to fit the curve.
     
-    sortX, sortY = zip(*sorted(zip(x, y)))
-    print(sortX)
+    # sortX, sortY = zip(*sorted(zip(x, y)))
+    # print(sortX)
 
-    curve = UnivariateSpline(x=sortX, y=sortY, k=3, s=None) #CubicSpline
-    xs = np.arange(0, img.shape[1], 10)
-    ys = curve(xs)
-    for i in range(xs.size):
-        if not np.isnan(ys[i]) and 0 < ys[i] < img.shape[0]:
-            pt = xs[i], int(ys[i])
-            print(ys[i])
-            cv2.circle(img, pt, radius=5, color=(0,0,255))
-            # pt1 = xs[i], int(ys[i])
-            # pt2 = xs[i + 1], int(ys[i + 1])
-            # print(pt1, pt2)
-            # cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0,0,255), thickness=2)
+    # curve = UnivariateSpline(x=sortX, y=sortY, k=3, s=None) #CubicSpline
+    # xs = np.arange(0, img.shape[1], 10)
+    # ys = curve(xs)
+    # for i in range(xs.size):
+    #     if not np.isnan(ys[i]) and 0 < ys[i] < img.shape[0]:
+    #         pt = xs[i], int(ys[i])
+    #         print(ys[i])
+    #         cv2.circle(img, pt, radius=5, color=(0,0,255))
+    #         # pt1 = xs[i], int(ys[i])
+    #         # pt2 = xs[i + 1], int(ys[i + 1])
+    #         # print(pt1, pt2)
+    #         # cv2.line(img=img, pt1=pt1, pt2=pt2, color=(0,0,255), thickness=2)
     return img
-
 
 
 def resizeFrame(img, scale):
@@ -162,38 +163,54 @@ def resizeFrame(img, scale):
 def openVideo():
     print('Load video...')
     prefix = '../../'
-    cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
+    cap = cv2.VideoCapture(prefix + 'taxi_intersect.mp4') # framerate of 29.97
+    # cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
     # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
     return cap
 
 
-def addLabels(per, mask, colored, lines):
+def addLabels(per, mask, background, colored, lines):
     cv2.putText(per, 'Perspective', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(background, 'Background', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(colored, 'Yellow+dilation+erosion', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
-    return per, mask, colored, lines
+    return per, mask, background, colored, lines
 
 
-def showSix(img, empty, per, mask, colored, lines):
-    top = np.hstack((img, per, mask))
-    bottom = np.hstack((empty, colored, lines))
+def show7(img, empty, per, mask, background, colored, lines):
+    scale = 0.5
+    img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
+    empty = cv2.resize(empty, dsize=None, fx=scale, fy=scale)
+    per = cv2.resize(per, dsize=None, fx=scale, fy=scale)
+    mask = cv2.resize(mask, dsize=None, fx=scale, fy=scale)
+    background = cv2.resize(background, dsize=None, fx=scale, fy=scale)
+    colored = cv2.resize(colored, dsize=None, fx=scale, fy=scale)
+    lines = cv2.resize(lines, dsize=None, fx=scale, fy=scale)
+
+    top = np.hstack((img, per, background))
+    bottom = np.hstack((empty, mask, colored, lines))
     cv2.imshow('combined', np.vstack((top, bottom)))
 
 
 def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
-    fgmask = fgbg.apply(perspective, learningRate=0.2)
+    fgmask = fgbg.apply(perspective, learningRate=0.5)
     background = fgbg.getBackgroundImage()
     # edges = extractEdges(perspective)
     colored = extractColor(background)
-    morphed = skeleton(colored)
+    dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=0)
+    morphed = skeleton(dilatedEroded)
     curve = addLines(morphed)
     # curve = fitCurve(morphed)
     addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-    per, mask, col, lin = addLabels(perspective, cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), colored, curve)
-    showSix(img, np.zeros(img.shape, np.uint8), per, mask, col, lin)
+    per, mask, back, col, lin = addLabels(  perspective, 
+                                            cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), 
+                                            background, 
+                                            colored, 
+                                            curve)
+    show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
 
 
 def pictureDemo(path, highres_scale=0.5, scaled_height=540):
@@ -226,7 +243,7 @@ def videoDemo(highres_scale=0.5, scaled_height=540):
 
 
 if __name__ == '__main__':
-    pictureDemo('taxi_straight.png')
-    pictureDemo('taxi_side.png')
-    pictureDemo('taxi_curve.png')
+    # pictureDemo('taxi_straight.png')
+    # pictureDemo('taxi_side.png')
+    # pictureDemo('taxi_curve.png')
     videoDemo()
