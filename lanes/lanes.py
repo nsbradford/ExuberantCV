@@ -34,7 +34,9 @@ class LineModel():
         nose_height = IMG_CUTOFF
         pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
         self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
-        self.orientation = - math.degrees(math.atan(m)) - 90
+        raw_orientation = math.degrees(math.atan(m))
+        offset = - 90 if raw_orientation >= 0 else 90
+        self.orientation = raw_orientation + offset
 
     def perpendicularDistancePixels(x0, y0, slope, intercept):
         """ f((x0,y0), ax+by+c=0) -> |ax0 + by0 + c| / (a^2 + b^2)^1/2 """
@@ -233,13 +235,13 @@ def fitRobustLines(img):
 
     model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression())
     model_ransac.fit(x.reshape(x.size, 1), y.reshape(x.size, 1))
-    m = model_ransac.estimator_.coef_
-    b = model_ransac.estimator_.intercept_
-    print('RANSAC guess:, y = {}x + {}'.format(m, b))
+    m = model_ransac.estimator_.coef_[0,0]
+    b = model_ransac.estimator_.intercept_[0]
     mymodel = LineModel(m, b, height=img.shape[0], width=img.shape[1], widthInMeters=3.0)
 
-    cv2.line(img=img, pt1=(0,b), pt2=(img.shape[1],m*img.shape[1]+b), color=(255,0,0), thickness=2)
-    text = 'RANSAC guess:, y = {}x + {}'.format(m, b) #, offset {} orientation {}, mymodel.offset, mymodel.orientation)
+    print('RANSAC guess:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
+    cv2.line(img=img, pt1=(0,int(b)), pt2=(img.shape[1],int(m*img.shape[1]+b)), color=(255,0,0), thickness=2)
+    text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     return img
 
@@ -315,8 +317,8 @@ def resizeFrame(img, scale):
 def openVideo():
     print('Load video...')
     prefix = '../../'
-    cap = cv2.VideoCapture(prefix + 'taxi_intersect.mp4') # framerate of 29.97
-    # cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
+    # cap = cv2.VideoCapture(prefix + 'taxi_intersect.mp4') # framerate of 29.97
+    cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
     # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
     return cap
 
@@ -326,7 +328,7 @@ def addLabels(per, mask, background, colored, lines):
     cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(background, 'Background', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(colored, 'Yellow+dilation+erosion', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
-    cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    # cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     return per, mask, background, colored, lines
 
 
