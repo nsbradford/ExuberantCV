@@ -19,7 +19,7 @@ import numpy as np
 from sklearn import linear_model
 import math
 
-
+IMG_SCALED_HEIGHT = 540 # original is 1920 x 1080
 IMG_CUTOFF = 320
 
 class LineModel():
@@ -91,7 +91,7 @@ class LineModel():
 #     if x_all.size < 50:
 #         print('\tWARNING: Not enough points to fit curve')
 #         return img
-#     plt.axis((0,540,0,540))
+#     plt.axis((0,IMG_SCALED_HEIGHT,0,IMG_SCALED_HEIGHT))
     
 #     # plt.show()
 #     # return
@@ -141,7 +141,7 @@ def getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight):
     # pts1 = np.float32([[382, 48], [411, 48], [292, 565], [565, 565]])
     # pts2 = np.float32([[0,0],[100,0],[0,1600],[100,1600]])
     pts1 = np.float32([ topLeft, topRight, bottomLeft, bottomRight ])
-    pts2 = np.float32([[0,0], [540,0], [0,540], [540,540]])   
+    pts2 = np.float32([[0,0], [IMG_SCALED_HEIGHT,0], [0,IMG_SCALED_HEIGHT], [IMG_SCALED_HEIGHT,IMG_SCALED_HEIGHT]])   
     M = cv2.getPerspectiveTransform(pts1,pts2)  
     return M
 
@@ -241,6 +241,7 @@ def fitRobustLines(img):
 
     print('RANSAC guess:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
     cv2.line(img=img, pt1=(0,int(b)), pt2=(img.shape[1],int(m*img.shape[1]+b)), color=(255,0,0), thickness=2)
+    cv2.line(img=img, pt1=(0, IMG_CUTOFF), pt2=(IMG_SCALED_HEIGHT, IMG_CUTOFF), color=(0,255,0), thickness=2)
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     return img
@@ -274,7 +275,7 @@ def addLines(img):
             x2 = int(x0 - 1000*(-b))
             y2 = int(y0 - 1000*(a))
             cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
-    cv2.line(img=copy, pt1=(0, IMG_CUTOFF), pt2=(540, IMG_CUTOFF), color=(0,255,0), thickness=2)
+    cv2.line(img=copy, pt1=(0, IMG_CUTOFF), pt2=(IMG_SCALED_HEIGHT, IMG_CUTOFF), color=(0,255,0), thickness=2)
     return copy
 
 
@@ -356,7 +357,7 @@ def laneDetection(frame, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     
     colored = extractColor(background)
     # edges = extractEdges(background)
-    dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=4)
+    dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=6)
     skeletoned = skeleton(dilatedEroded)
     curve = fitRobustLines(skeletoned)
     # curve = addLines(skeletoned)
@@ -371,7 +372,7 @@ def laneDetection(frame, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
 
 
-def pictureDemo(path, highres_scale=0.5, scaled_height=540):
+def pictureDemo(path, highres_scale=0.5, scaled_height=IMG_SCALED_HEIGHT):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
     fgbg = cv2.createBackgroundSubtractorMOG2()
@@ -383,7 +384,7 @@ def pictureDemo(path, highres_scale=0.5, scaled_height=540):
     cv2.waitKey(3000)
 
 
-def videoDemo(highres_scale=0.5, scaled_height=540):
+def videoDemo(highres_scale=0.5, scaled_height=IMG_SCALED_HEIGHT):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
     fgbg = cv2.createBackgroundSubtractorMOG2()

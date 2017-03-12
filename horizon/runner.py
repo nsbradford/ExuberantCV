@@ -57,7 +57,7 @@ def video_demo():
     scaling_factor = 0.2
 
     print('Load video...')
-    cap = cv2.VideoCapture('../../flying_turn.avi') #framerate of 25
+    cap = cv2.VideoCapture('../vid/flying_turn.avi') #framerate of 25
     count = 0
     m = None
     b = None
