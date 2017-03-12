@@ -318,8 +318,8 @@ def resizeFrame(img, scale):
 def openVideo():
     print('Load video...')
     prefix = '../../'
-    # cap = cv2.VideoCapture(prefix + 'taxi_intersect.mp4') # framerate of 29.97
-    cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
+    cap = cv2.VideoCapture('../vid/' + 'taxi_intersect.mp4') # framerate of 29.97
+    # cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
     # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
     return cap
 
