@@ -6,7 +6,7 @@
 
 import cv2
 import numpy as np
-cap = cv2.VideoCapture("../../taxi_trim.mp4")
+cap = cv2.VideoCapture("../vid/taxi_intersect.mp4")
 
 ret, frame1 = cap.read()
 prvs = cv2.cvtColor(frame1,cv2.COLOR_BGR2GRAY)

@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 
 # cap = cv2.VideoCapture('slow.flv')
-cap = cv2.VideoCapture('../../taxi_trim.mp4')
+cap = cv2.VideoCapture('../vid/taxi_intersect.mp4')
 
 # params for ShiTomasi corner detection
 feature_params = dict( maxCorners = 100,
