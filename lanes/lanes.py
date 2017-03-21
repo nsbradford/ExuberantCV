@@ -19,8 +19,13 @@ import numpy as np
 from sklearn import linear_model
 import math
 
-IMG_SCALED_HEIGHT = 540 # original is 1920 x 1080
-IMG_CUTOFF = 320
+
+
+class Constants():
+    IMG_SCALED_HEIGHT = 540 # original is 1920 x 1080
+    IMG_CUTOFF = 320
+
+
 
 class LineModel():
     """ Represents a linear hypothesis for a single lane. 
@@ -31,7 +36,7 @@ class LineModel():
 
     def __init__(self, m, b, height, width, widthInMeters=3.0):
         center = width / 2.0
-        nose_height = IMG_CUTOFF
+        nose_height = Constants.IMG_CUTOFF
         pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
         self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
         raw_orientation = math.degrees(math.atan(m))
@@ -50,7 +55,7 @@ class LineModel():
 
 
 # def selectRandomPoints(x_all, y_all):
-#     bottom_indices = np.where(y_all == IMG_CUTOFF)[0]
+#     bottom_indices = np.where(y_all == Constants.IMG_CUTOFF)[0]
 #     print(bottom_indices.shape)
 
 #     if np.nonzero(bottom_indices)[0].size == 0:
@@ -91,7 +96,7 @@ class LineModel():
 #     if x_all.size < 50:
 #         print('\tWARNING: Not enough points to fit curve')
 #         return img
-#     plt.axis((0,IMG_SCALED_HEIGHT,0,IMG_SCALED_HEIGHT))
+#     plt.axis((0,Constants.IMG_SCALED_HEIGHT,0,Constants.IMG_SCALED_HEIGHT))
     
 #     # plt.show()
 #     # return
@@ -137,13 +142,19 @@ def getPerspectivePoints(highres_scale):
     return topLeft, topRight, bottomLeft, bottomRight
 
 
-def getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight):
+def getPerspectiveMatrixFromPoints(topLeft, topRight, bottomLeft, bottomRight):
     # pts1 = np.float32([[382, 48], [411, 48], [292, 565], [565, 565]])
     # pts2 = np.float32([[0,0],[100,0],[0,1600],[100,1600]])
     pts1 = np.float32([ topLeft, topRight, bottomLeft, bottomRight ])
-    pts2 = np.float32([[0,0], [IMG_SCALED_HEIGHT,0], [0,IMG_SCALED_HEIGHT], [IMG_SCALED_HEIGHT,IMG_SCALED_HEIGHT]])   
+    pts2 = np.float32([[0,0], [Constants.IMG_SCALED_HEIGHT,0], [0,Constants.IMG_SCALED_HEIGHT], [Constants.IMG_SCALED_HEIGHT,Constants.IMG_SCALED_HEIGHT]])   
     M = cv2.getPerspectiveTransform(pts1,pts2)  
     return M
+
+
+def getPerspectiveMatrix(highres_scale):
+    topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
+    perspectiveMatrix = getPerspectiveMatrixFromPoints(topLeft, topRight, bottomLeft, bottomRight)
+    return perspectiveMatrix
 
 
 def addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight):
@@ -239,9 +250,9 @@ def fitRobustLines(img):
     b = model_ransac.estimator_.intercept_[0]
     mymodel = LineModel(m, b, height=img.shape[0], width=img.shape[1], widthInMeters=3.0)
 
-    print('RANSAC guess:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
+    print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
     cv2.line(img=img, pt1=(0,int(b)), pt2=(img.shape[1],int(m*img.shape[1]+b)), color=(255,0,0), thickness=2)
-    cv2.line(img=img, pt1=(0, IMG_CUTOFF), pt2=(IMG_SCALED_HEIGHT, IMG_CUTOFF), color=(0,255,0), thickness=2)
+    cv2.line(img=img, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), color=(0,255,0), thickness=2)
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     return img
@@ -275,7 +286,7 @@ def addLines(img):
             x2 = int(x0 - 1000*(-b))
             y2 = int(y0 - 1000*(a))
             cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
-    cv2.line(img=copy, pt1=(0, IMG_CUTOFF), pt2=(IMG_SCALED_HEIGHT, IMG_CUTOFF), color=(0,255,0), thickness=2)
+    cv2.line(img=copy, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), color=(0,255,0), thickness=2)
     return copy
 
 
@@ -311,19 +322,6 @@ def fitCurve(img):
     return img
 
 
-def resizeFrame(img, scale):
-    return cv2.resize(img, dsize=None, fx=scale, fy=scale)
-
-
-def openVideo():
-    print('Load video...')
-    prefix = '../../'
-    cap = cv2.VideoCapture('../vid/' + 'taxi_intersect.mp4') # framerate of 29.97
-    # cap = cv2.VideoCapture(prefix + 'taxi_trim.mp4') # framerate of 29.97
-    # print('Frame size:', frame.shape) # 1920 x 1080 original, 960 x 540 resized
-    return cap
-
-
 def addLabels(per, mask, background, colored, lines):
     cv2.putText(per, 'Perspective', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
@@ -335,6 +333,7 @@ def addLabels(per, mask, background, colored, lines):
 
 def show7(img, empty, per, mask, background, colored, lines):
     scale = 0.5
+    print((img.shape, per.shape, background.shape))
     img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
     empty = cv2.resize(empty, dsize=None, fx=scale, fy=scale)
     per = cv2.resize(per, dsize=None, fx=scale, fy=scale)
@@ -343,13 +342,14 @@ def show7(img, empty, per, mask, background, colored, lines):
     colored = cv2.resize(colored, dsize=None, fx=scale, fy=scale)
     lines = cv2.resize(lines, dsize=None, fx=scale, fy=scale)
 
+    print((img.shape, per.shape, background.shape))
+
     top = np.hstack((img, per, background))
     bottom = np.hstack((empty, mask, colored, lines))
     cv2.imshow('combined', np.vstack((top, bottom)))
 
 
-def laneDetection(frame, fgbg, perspectiveMatrix, scaled_height, highres_scale):
-    img = resizeFrame(frame, highres_scale)
+def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
     fgmask = fgbg.apply(perspective, learningRate=0.5)
@@ -371,37 +371,3 @@ def laneDetection(frame, fgbg, perspectiveMatrix, scaled_height, highres_scale):
                                             curve)
     show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
 
-
-def pictureDemo(path, highres_scale=0.5, scaled_height=IMG_SCALED_HEIGHT):
-    topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
-    perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
-    fgbg = cv2.createBackgroundSubtractorMOG2()
-    prefix = '../img/taxi/'
-    frame = cv2.imread(prefix + path)
-    frame = resizeFrame(frame, 0.5)
-    img = resizeFrame(frame, highres_scale)
-    laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale)
-    cv2.waitKey(3000)
-
-
-def videoDemo(highres_scale=0.5, scaled_height=IMG_SCALED_HEIGHT):
-    topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
-    perspectiveMatrix = getPerspectiveMatrix(topLeft, topRight, bottomLeft, bottomRight)
-    fgbg = cv2.createBackgroundSubtractorMOG2()
-    cap = openVideo()
-    while(cap.isOpened()):
-        ret, frame = cap.read()
-        if not ret:
-            break
-        laneDetection(frame, fgbg, perspectiveMatrix, scaled_height, highres_scale)
-        if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
-            break
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-if __name__ == '__main__':
-    # pictureDemo('taxi_straight.png')
-    # pictureDemo('taxi_side.png')
-    # pictureDemo('taxi_curve.png')
-    videoDemo()
