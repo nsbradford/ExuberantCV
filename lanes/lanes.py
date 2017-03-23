@@ -3,17 +3,14 @@
     Nicholas S. Bradford
     12 Feb 2017
 
-    TODO:
-        -RANSAC for curve/spline-fitting
-        -Kalman filter (use pykalman)
-
 """
 
 import cv2
 import numpy as np
 import math
 
-from fit import fitRobustLines
+from fit import fitLines
+from oldlines import fitRobustLine
 
 
 class Constants():
@@ -68,7 +65,7 @@ def extractColor(img):
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # lower_yellow = np.array([10, 70, 30])
-    lower_yellow = np.array([10, 100, 30])
+    lower_yellow = np.array([10, 80, 30])
     upper_yellow = np.array([60, 255, 255])
     mask = cv2.inRange(hsv, lower_yellow, upper_yellow) # Threshold the HSV image to get only blue colors
     res = cv2.bitwise_and(img, img, mask= mask) # Bitwise-AND mask and original image
@@ -147,15 +144,12 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
     fgmask = fgbg.apply(perspective, learningRate=0.5)
     background = fgbg.getBackgroundImage()
-    
     colored = extractColor(background)
     # edges = extractEdges(background)
     dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=4)
     skeletoned = skeleton(dilatedEroded)
-    curve = fitRobustLines(skeletoned)
-    # curve = addLines(skeletoned)
-    # curve = fitCurve(skeletoned)
-    # plotSpline(skeletoned)
+    curve = fitLines(skeletoned)
+    # curve = fitRobustLine(skeletoned)
     addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
     per, mask, back, col, lin = addLabels(  perspective, 
                                             cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), 

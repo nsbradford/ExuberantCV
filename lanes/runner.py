@@ -48,8 +48,8 @@ def videoDemo(filename, highres_scale=0.5, scaled_height=Constants.IMG_SCALED_HE
 
 
 if __name__ == '__main__':
-    pictureDemo('taxi_straight.png')
+    # pictureDemo('taxi_straight.png')
     # pictureDemo('taxi_side.png')
-    pictureDemo('taxi_curve.png')
+    # pictureDemo('taxi_curve.png')
     videoDemo('taxi_intersect.mp4') # framerate of 29.97
-    # videoDemo('taxi_trim.mp4') # framerate of 29.97
+    # videoDemo('../../taxi_trim.mp4') # framerate of 29.97
