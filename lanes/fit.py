@@ -49,23 +49,29 @@ def extractXY(img):
 
 
 def isMultiLine(x, y, inliers, outliers):
+    m = x.size
+    n_outliers = np.count_nonzero(outliers)
+    percent_outlier = n_outliers / m
+    percent_is_multi = percent_outlier > 0.3
+    if percent_outlier < .1:
+        print('\tisMultiLine(): Too few outliers')
+        return False
+
     combined = np.vstack((x, y))
     cov = np.cov(combined)
     assert cov.shape == (2,2), cov.shape
     evals, evecs = np.linalg.eigh(cov)
     eig_is_multi = evals[1] / 10 < evals[0]
 
-    percent_outlier = np.count_nonzero(outliers) / inliers.size
-    percent_is_multi = percent_outlier > 0.3
-
-    is_same = eig_is_multi==percent_is_multi
-    print('SameResult: {}\t Eig(cov): {} \t %Outlier: {:.1f}\%'.format(is_same, eig_is_multi, percent_outlier*100))
+    is_same = eig_is_multi == percent_is_multi
+    print('SameResult: {}\t Eig(cov): {} \t Outlier: {:.1f}%'.format(is_same, eig_is_multi, percent_outlier*100))
     return eig_is_multi or percent_is_multi #, int(evals[0]), int(evals[1])
 
 
 def fitOneModel(x, y, height, width):
     x = x.reshape(x.size, 1)
     y = y.reshape(y.size, 1)
+    # print('\tfit {} {}'.format(x.shape, y.shape))
     model_ransac = linear_model.RANSACRegressor(base_estimator=linear_model.LinearRegression())
                                                 #max_trials=1000)
                                                 # residual_threshold=5.0 )
@@ -78,7 +84,7 @@ def fitOneModel(x, y, height, width):
 
 
 def plotModel(img, x, y, mymodel, inliers):
-    # print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
+    # print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orient {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
     cv2.line(img=img, pt1=(0,int(mymodel.b)), pt2=(img.shape[1],int(mymodel.m*img.shape[1]+mymodel.b)), 
                         color=(255,0,0), thickness=2)
     cv2.line(img=img, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), 
@@ -95,11 +101,12 @@ def plotModel(img, x, y, mymodel, inliers):
     return img
 
 
-def fitLines(img):
+def fitLines(copy):
     """
         Args:
             img
     """
+    img = copy.copy()
     x, y = extractXY(img)
     if x.size < 50:
         print('No lane detected.')

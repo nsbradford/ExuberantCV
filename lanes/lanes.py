@@ -110,13 +110,15 @@ def skeleton(original):
     return colorSkel
 
 
-def addLabels(per, mask, background, colored, lines):
+def addLabels(per, mask, background, colored, dilatedEroded, skeletoned, lines):
     cv2.putText(per, 'Perspective', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(mask, 'BackgroundMotionSubtraction', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(background, 'Background', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     cv2.putText(colored, 'Yellow', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(dilatedEroded, 'dilated+eroded', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
+    cv2.putText(skeletoned, 'skeletoned', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
     # cv2.putText(lines, 'Skeleton+HoughLines', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
-    return per, mask, background, colored, lines
+    return per, mask, background, colored, dilatedEroded, skeletoned, lines
 
 
 def show7(img, empty, per, mask, background, colored, lines):
@@ -134,6 +136,23 @@ def show7(img, empty, per, mask, background, colored, lines):
     cv2.imshow('combined', np.vstack((top, bottom)))
 
 
+def show9(img, empty, per, mask, background, colored, dilatedEroded, skeletoned, lines):
+    scale = 0.5
+    img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
+    empty = cv2.resize(empty, dsize=None, fx=scale, fy=scale)
+    per = cv2.resize(per, dsize=None, fx=scale, fy=scale)
+    mask = cv2.resize(mask, dsize=None, fx=scale, fy=scale)
+    background = cv2.resize(background, dsize=None, fx=scale, fy=scale)
+    colored = cv2.resize(colored, dsize=None, fx=scale, fy=scale)
+    lines = cv2.resize(lines, dsize=None, fx=scale, fy=scale)
+    dilatedEroded = cv2.resize(dilatedEroded, dsize=None, fx=scale, fy=scale)
+    skeletoned = cv2.resize(skeletoned, dsize=None, fx=scale, fy=scale)
+
+    top = np.hstack((img, per, background, mask))
+    bottom = np.hstack((empty, colored, dilatedEroded, skeletoned, lines))
+    cv2.imshow('combined', np.vstack((top, bottom)))
+
+
 def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
@@ -146,10 +165,14 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     curve = fitLines(skeletoned)
     # curve = fitRobustLine(skeletoned)
     addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-    per, mask, back, col, lin = addLabels(  perspective, 
+    per, mask, back, col, dilEroded, skel, lin = addLabels(  perspective, 
                                             cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), 
                                             background, 
                                             colored, 
+                                            dilatedEroded, 
+                                            skeletoned,
                                             curve)
-    show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
+    # show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
+    show9(  img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), 
+            per, mask, back, col, dilEroded, skel, lin)
 
