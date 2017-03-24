@@ -9,14 +9,9 @@ import cv2
 import numpy as np
 import math
 
+from config import Constants
 from fit import fitLines
 from oldlines import fitRobustLine
-
-
-class Constants():
-    IMG_SCALED_HEIGHT = 540 # original is 1920 x 1080
-    IMG_CUTOFF = 320
-
 
 
 def getPerspectivePoints(highres_scale):

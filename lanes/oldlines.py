@@ -9,7 +9,8 @@ import numpy as np
 from sklearn import linear_model
 import math
 
-import lanes
+from config import Constants
+
 
 def fitRobustLine(img):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -44,7 +45,7 @@ def fitRobustLine(img):
 
     print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orientation {3:.2f}'.format(m, b, mymodel.offset, mymodel.orientation))
     cv2.line(img=img, pt1=(0,int(b)), pt2=(img.shape[1],int(m*img.shape[1]+b)), color=(255,0,0), thickness=2)
-    cv2.line(img=img, pt1=(0, lanes.Constants.IMG_CUTOFF), pt2=(lanes.Constants.IMG_SCALED_HEIGHT, lanes.Constants.IMG_CUTOFF), 
+    cv2.line(img=img, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), 
                         color=(0,255,0), thickness=2)
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
@@ -185,7 +186,7 @@ def addLines(img):
             x2 = int(x0 - 1000*(-b))
             y2 = int(y0 - 1000*(a))
             cv2.line(img=copy, pt1=(x1,y1), pt2=(x2,y2), color=(255,0,0), thickness=2)
-    cv2.line(img=copy, pt1=(0, lanes.Constants.IMG_CUTOFF), pt2=(lanes.Constants.IMG_SCALED_HEIGHT, lanes.Constants.IMG_CUTOFF), 
+    cv2.line(img=copy, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), 
                             color=(0,255,0), thickness=2)
     return copy
 
