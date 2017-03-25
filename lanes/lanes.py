@@ -14,6 +14,10 @@ from fit import fitLines
 from oldlines import fitRobustLine
 
 
+def resizeFrame(img, scale):
+    return cv2.resize(img, dsize=None, fx=scale, fy=scale)
+
+
 def getPerspectivePoints(highres_scale):
     original_width = 1920
     original_height = 1080
@@ -138,15 +142,15 @@ def show7(img, empty, per, mask, background, colored, lines):
 
 def show9(img, empty, per, mask, background, colored, dilatedEroded, skeletoned, lines):
     scale = 0.5
-    img = cv2.resize(img, dsize=None, fx=scale, fy=scale)
-    empty = cv2.resize(empty, dsize=None, fx=scale, fy=scale)
-    per = cv2.resize(per, dsize=None, fx=scale, fy=scale)
-    mask = cv2.resize(mask, dsize=None, fx=scale, fy=scale)
-    background = cv2.resize(background, dsize=None, fx=scale, fy=scale)
-    colored = cv2.resize(colored, dsize=None, fx=scale, fy=scale)
-    lines = cv2.resize(lines, dsize=None, fx=scale, fy=scale)
-    dilatedEroded = cv2.resize(dilatedEroded, dsize=None, fx=scale, fy=scale)
-    skeletoned = cv2.resize(skeletoned, dsize=None, fx=scale, fy=scale)
+    img = resizeFrame(img, scale)
+    empty = resizeFrame(empty, scale)
+    per = resizeFrame(per, scale)
+    mask = resizeFrame(mask, scale)
+    background = resizeFrame(background, scale)
+    colored = resizeFrame(colored, scale)
+    lines = resizeFrame(lines, scale)
+    dilatedEroded = resizeFrame(dilatedEroded, scale)
+    skeletoned = resizeFrame(skeletoned, scale)
 
     top = np.hstack((img, per, background, mask))
     bottom = np.hstack((empty, colored, dilatedEroded, skeletoned, lines))

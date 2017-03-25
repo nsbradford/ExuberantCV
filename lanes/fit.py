@@ -9,7 +9,9 @@ from sklearn import linear_model
 import math
 
 from config import Constants
-
+from sklearn.feature_extraction import image
+from sklearn.cluster import SpectralClustering
+import matplotlib.pyplot as plt
 
 class LineModel():
     """ Represents a linear hypothesis for a single lane. 
@@ -53,7 +55,7 @@ def isMultiLine(x, y, inliers, outliers):
     n_outliers = np.count_nonzero(outliers)
     percent_outlier = n_outliers / m
     percent_is_multi = percent_outlier > 0.3
-    if percent_outlier < .1:
+    if percent_outlier < .3:
         print('\tisMultiLine(): Too few outliers')
         return False
 
@@ -120,6 +122,8 @@ def fitLines(copy):
     if is_multi:
         mymodel2, inliers2 = fitOneModel(x[outliers], y[outliers], height=img.shape[0], width=img.shape[1])
         img = plotModel(img, x, y, mymodel2, inliers2)
+        # if np.count_nonzero(outliers)/inliers.size > .4:
+        #     clustering(np.vstack((x, y)).T)
 
     # print('Multiple lines: {}\t{}/{} inliers'.format(is_multi, np.count_nonzero(inliers), inliers.size))
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)

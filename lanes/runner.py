@@ -5,7 +5,7 @@
 
 import cv2
 
-from lanes import getPerspectiveMatrix, laneDetection, Constants
+from lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
 
 
 def openVideo(filename):
@@ -14,10 +14,6 @@ def openVideo(filename):
     cap = cv2.VideoCapture('../vid/' + filename)
     # print('Frame size:', frame.shape)
     return cap
-
-
-def resizeFrame(img, scale):
-    return cv2.resize(img, dsize=None, fx=scale, fy=scale)
 
 
 def pictureDemo(path, highres_scale=0.5, scaled_height=Constants.IMG_SCALED_HEIGHT):

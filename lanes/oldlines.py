@@ -52,6 +52,39 @@ def fitRobustLine(img):
     return img
 
 
+# def clustering(X):
+#     img = cv2.cvtColor(copy, cv2.COLOR_BGR2GRAY)
+#     mask = img.astype(bool)
+
+#     img = img.astype(float)
+#     img += 1 + 0.2 * np.random.randn(*img.shape)
+
+#     # Convert the image into a graph with the value of the gradient on the
+#     # edges.
+#     graph = image.img_to_graph(img, mask=mask)
+
+#     # Take a decreasing function of the gradient: we take it weakly
+#     # dependent from the gradient the segmentation is close to a voronoi
+#     graph.data = np.exp(-graph.data / graph.data.std())
+
+#     Force the solver to be arpack, since amg is numerically
+#     unstable on this example
+#     labels = spectral_clustering(X, n_clusters=4, eigen_solver='arpack')
+#     label_im = -np.ones(mask.shape)
+#     label_im[mask] = labels
+
+#     print('{} {} {} '.format(img.shape, graph.shape, label_im.shape))
+
+#     # plt.matshow(img)
+
+#     alg = SpectralClustering(n_clusters=2)
+#     print(X.shape)
+#     alg.fit(X)
+#     plt.figure(1)
+#     print('plot...')
+#     plt.plot(X[alg.labels_ == 0], color='w')
+#     plt.plot(X[alg.labels_ == 1], color='r')
+#     plt.show()
 
 # def selectRandomPoints(x_all, y_all):
 #     bottom_indices = np.where(y_all == Constants.IMG_CUTOFF)[0]
