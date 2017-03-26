@@ -11,7 +11,7 @@ from lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
 
 def openVideo(filename):
     """ 1920 x 1080 original, 960 x 540 resized """ 
-    print('Load video...')
+    print('Load video {}...'.format(filename))
     cap = cv2.VideoCapture('../vid/' + filename)
     # print('Frame size:', frame.shape)
     return cap
@@ -20,8 +20,8 @@ def openVideo(filename):
 def timerDemo():
     import timeit
     n_iterations = 1
-    n_frames = 100
-    result = timeit.timeit('runner.videoDemo("taxi_intersect.mp4", is_display=False, n_frames={})'.format(n_frames), 
+    n_frames = 125
+    result = timeit.timeit('runner.videoDemo("intersect.mp4", is_display=True, n_frames={})'.format(n_frames), 
                         setup='import runner;', 
                         number=n_iterations)
     seconds = result / n_iterations
