@@ -157,7 +157,7 @@ def show9(img, empty, per, mask, background, colored, dilatedEroded, skeletoned,
     cv2.imshow('combined', np.vstack((top, bottom)))
 
 
-def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
+def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=True):
     topLeft, topRight, bottomLeft, bottomRight = getPerspectivePoints(highres_scale)
     perspective = cv2.warpPerspective(img, perspectiveMatrix, (scaled_height,scaled_height) )
     fgmask = fgbg.apply(perspective, learningRate=0.5)
@@ -168,15 +168,16 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale):
     skeletoned = skeleton(dilatedEroded)
     curve = fitLines(skeletoned)
     # curve = fitRobustLine(skeletoned)
-    addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
-    per, mask, back, col, dilEroded, skel, lin = addLabels(  perspective, 
-                                            cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), 
-                                            background, 
-                                            colored, 
-                                            dilatedEroded, 
-                                            skeletoned,
-                                            curve)
-    # show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
-    show9(  img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), 
-            per, mask, back, col, dilEroded, skel, lin)
+    if is_display:
+        addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
+        per, mask, back, col, dilEroded, skel, lin = addLabels(  perspective, 
+                                                cv2.cvtColor(fgmask, cv2.COLOR_GRAY2BGR), 
+                                                background, 
+                                                colored, 
+                                                dilatedEroded, 
+                                                skeletoned,
+                                                curve)
+        # show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
+        show9(  img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), 
+                per, mask, back, col, dilEroded, skel, lin)
 
