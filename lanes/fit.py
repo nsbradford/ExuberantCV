@@ -55,7 +55,7 @@ def isMultiLine(x, y, inliers, outliers):
     n_outliers = np.count_nonzero(outliers)
     percent_outlier = n_outliers / m
     percent_is_multi = percent_outlier > 0.3
-    if percent_outlier < .3:
+    if percent_outlier < .2:
         print('\tisMultiLine(): Too few outliers')
         return False
 
@@ -77,7 +77,10 @@ def fitOneModel(x, y, height, width):
     model_ransac = linear_model.RANSACRegressor(base_estimator=linear_model.LinearRegression())
                                                 #max_trials=1000)
                                                 # residual_threshold=5.0 )
-    model_ransac.fit(x, y)
+    try:
+        model_ransac.fit(x, y)
+    except ValueError as e:
+        print('ValueError in model_ransac.fit(): {}'.format(str(e)))
     m = model_ransac.estimator_.coef_[0,0]
     b = model_ransac.estimator_.intercept_[0]
     inliers = model_ransac.inlier_mask_

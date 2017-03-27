@@ -59,9 +59,7 @@ if __name__ == "__main__":
         position_overlay = np.zeros_like(im)
         pos_tup = tuple(pos.astype(int))
         print(tuple(pos))
-        
         position_overlay[pos_tup[0], pos_tup[1]] = 1
-        # position_overlay[120, 160] = 1
         particle_overlay = np.zeros_like(im)
         particle_overlay[tuple(xs.T)] = 1
         # pylab.hold(True)
