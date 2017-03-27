@@ -7,7 +7,7 @@
 import cv2
 
 from lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
-
+from model import ParticleFilterModel
 
 def openVideo(filename):
     """ 1920 x 1080 original, 960 x 540 resized """ 
@@ -60,7 +60,15 @@ def videoDemo(filename, is_display=True, highres_scale=0.5, scaled_height=Consta
     cv2.destroyAllWindows()
 
 
-def particleFilterDemo(filename, is_display=True, highres_scale=0.5, scaled_height=Constants.IMG_SCALED_HEIGHT, n_frames=-1):
+def particleFilterDemo(filename, is_display=True, highres_scale=0.5, 
+                        scaled_height=Constants.IMG_SCALED_HEIGHT, n_frames=-1):
+    """ Video demo with particle filtering applied.
+        Args:
+            TODO
+        Returns:
+            None
+    """
+    model = ParticleFilterModel()
     perspectiveMatrix = getPerspectiveMatrix(highres_scale)
     fgbg = cv2.createBackgroundSubtractorMOG2()
     cap = openVideo(filename)
@@ -76,7 +84,8 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5, scaled_heig
         if count % 3 != 0:
             continue
         img = resizeFrame(frame, highres_scale)
-        laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
+        state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
+        model.update(state)
         if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()

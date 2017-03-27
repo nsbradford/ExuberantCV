@@ -6,40 +6,9 @@
 import cv2
 import numpy as np
 from sklearn import linear_model
-import math
 
 from config import Constants
-from sklearn.feature_extraction import image
-from sklearn.cluster import SpectralClustering
-import matplotlib.pyplot as plt
-
-class LineModel():
-    """ Represents a linear hypothesis for a single lane. 
-        Attributes:
-            offset (float): shortest (perpendicular) distance to the lane in meters
-            orientation (float): that the lane is offset from dead-ahead (+ slope means + degrees)
-    """
-
-    def __init__(self, m, b, height, width, widthInMeters=3.0):
-        self.m = m
-        self.b = b
-        center = width / 2.0
-        nose_height = Constants.IMG_CUTOFF
-        pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
-        self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
-        raw_orientation = math.degrees(math.atan(m))
-        offset = - 90 if raw_orientation >= 0 else 90
-        self.orientation = raw_orientation + offset
-
-    def perpendicularDistancePixels(x0, y0, slope, intercept):
-        """ f((x0,y0), ax+by+c=0) -> |ax0 + by0 + c| / (a^2 + b^2)^1/2 """
-        a = slope
-        b = -1
-        c = intercept
-        return abs(a * x0 + b * y0 + c) / math.sqrt(a ** 2 + b ** 2)
-
-    def pixelsToMeters(pixel_offset, pixel_width, meters_width):
-        return pixel_offset * meters_width / pixel_width
+from model import State, LineModel
 
 
 def extractXY(img):
@@ -77,10 +46,7 @@ def fitOneModel(x, y, height, width):
     model_ransac = linear_model.RANSACRegressor(base_estimator=linear_model.LinearRegression())
                                                 #max_trials=1000)
                                                 # residual_threshold=5.0 )
-    try:
-        model_ransac.fit(x, y)
-    except ValueError as e:
-        print('ValueError in model_ransac.fit(): {}'.format(str(e)))
+    model_ransac.fit(x, y)
     m = model_ransac.estimator_.coef_[0,0]
     b = model_ransac.estimator_.intercept_[0]
     inliers = model_ransac.inlier_mask_
@@ -118,20 +84,25 @@ def fitLines(copy):
         cv2.putText(img, 'No lane detected', (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 1, cv2.LINE_AA)
         return img
     
-    mymodel, inliers = fitOneModel(x, y, height=img.shape[0], width=img.shape[1])
-    outliers = ~inliers
-    is_multi = isMultiLine(x, y, inliers, outliers)
-    img = plotModel(img, x, y, mymodel, inliers)
-    if is_multi:
-        mymodel2, inliers2 = fitOneModel(x[outliers], y[outliers], height=img.shape[0], width=img.shape[1])
-        img = plotModel(img, x, y, mymodel2, inliers2)
-        # if np.count_nonzero(outliers)/inliers.size > .4:
-        #     clustering(np.vstack((x, y)).T)
-
+    try:
+        mymodel, inliers = fitOneModel(x, y, height=img.shape[0], width=img.shape[1])
+        outliers = ~inliers
+        is_multi = isMultiLine(x, y, inliers, outliers)
+        img = plotModel(img, x, y, mymodel, inliers)
+        if is_multi:
+            mymodel2, inliers2 = fitOneModel(x[outliers], y[outliers], height=img.shape[0], width=img.shape[1])
+            img = plotModel(img, x, y, mymodel2, inliers2)
+            # if np.count_nonzero(outliers)/inliers.size > .4:
+            #     clustering(np.vstack((x, y)).T)
+        else:
+            mymodel2 = None
+    except ValueError as e:
+        print('ValueError in model_ransac.fit(): {}'.format(str(e)))
+        return img
     # print('Multiple lines: {}\t{}/{} inliers'.format(is_multi, np.count_nonzero(inliers), inliers.size))
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 1, cv2.LINE_AA)
-    return img
+    return img, State(mymodel, mymodel2)
 
 
 

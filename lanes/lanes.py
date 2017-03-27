@@ -166,7 +166,7 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is
     # edges = extractEdges(background)
     dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=4)
     skeletoned = skeleton(dilatedEroded)
-    curve = fitLines(skeletoned)
+    curve, state = fitLines(skeletoned)
     # curve = fitRobustLine(skeletoned)
     if is_display:
         addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
@@ -180,4 +180,5 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is
         # show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
         show9(  img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), 
                 per, mask, back, col, dilEroded, skel, lin)
+    return state
 

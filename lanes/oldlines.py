@@ -11,6 +11,10 @@ import math
 
 from config import Constants
 
+from sklearn.feature_extraction import image
+from sklearn.cluster import SpectralClustering
+import matplotlib.pyplot as plt
+
 
 def fitRobustLine(img):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
