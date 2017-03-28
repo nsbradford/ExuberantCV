@@ -234,8 +234,8 @@ class ParticleFilterModel():
 
 
     def apply_control(self, resampled_particles):
-        noise1 = np.random.normal(0, 1, (self.n, 1))
-        noise2 = np.random.normal(0, 20, (self.n, 1))
+        noise1 = np.random.normal(0, 0.25, (self.n, 1))
+        noise2 = np.random.normal(0, 10, (self.n, 1))
         noise = np.hstack((noise1, noise2))
         return resampled_particles + noise
 
@@ -250,14 +250,16 @@ class ParticleFilterModel():
 
     def show(self):
         print('Filter | \t offset {0:.2f} \t orientation {1:.2f}'.format(self.state[0], self.state[1]))
+        img_shape = (200,200)
         shape = (20, 360)
-        particle_overlay = np.zeros(shape)
-        x = self.particles.clip(np.zeros(2), np.array(shape)-1).astype(int) # Clip out-of-bounds particles
-        x = x + np.array([8, 0])
-        x[x > 19] = 19
+        particle_overlay = np.zeros(img_shape)
+        x = self.particles + + np.array([8, 0])
+        x = x.clip(np.zeros(2), np.array(shape)-1) # Clip out-of-bounds particles
+        x *= np.array([200/20, 200/360])
+        x = x.astype(int)
 
         particle_overlay[tuple(x.T)] = 1
-        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
+        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=1, fy=1))
         # if self.last_img is not None:
         #     img = plotModel(self.last_img, self.state_to_model().model1)
         #     cv2.imshow('img', img)
