@@ -85,7 +85,7 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
             continue
         img = resizeFrame(frame, highres_scale)
         state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
-        model.update(state)
+        model.update_state(state)
         if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
