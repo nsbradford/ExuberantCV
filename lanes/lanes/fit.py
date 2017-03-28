@@ -20,7 +20,7 @@ def extractXY(img):
 
 
 def isMultiLine(x, y, inliers, outliers):
-    debug = False
+    debug = True
     m = x.size
     n_outliers = np.count_nonzero(outliers)
     percent_outlier = n_outliers / m
@@ -83,7 +83,7 @@ def fitLines(copy):
     except ValueError as e:
         print('ValueError in model_ransac.fit(): {}'.format(str(e)))
         return img, None
-    # print('Multiple lines: {}\t{}/{} inliers'.format(is_multi, np.count_nonzero(inliers), inliers.size))
+    # print('\tMultiple lines: {}\t{}/{} inliers'.format(is_multi, np.count_nonzero(inliers), inliers.size))
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     # print(text)
     cv2.putText(img, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 1, cv2.LINE_AA)

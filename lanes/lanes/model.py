@@ -257,11 +257,8 @@ class ParticleFilterModel():
         x[x > 19] = 19
 
         particle_overlay[tuple(x.T)] = 1
-        # plt.hexbin(self.particles[:, 0], self.particles[:, 1])
-        # plt.show()
-        # cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
-        if self.last_img is not None:
-            # img = plotModel(self.last_img, self.state_to_model().model1)
-            # cv2.imshow('img', img)
-            pass
-        # plt.show()
+        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
+        # if self.last_img is not None:
+        #     img = plotModel(self.last_img, self.state_to_model().model1)
+        #     cv2.imshow('img', img)
+        #     pass

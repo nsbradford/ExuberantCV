@@ -19,9 +19,9 @@ class LineModelTest(unittest.TestCase):
         dist = LineModel.perpendicularDistancePixels(x0, y0, slope=m, intercept=b)
         self.assertEquals(answer, dist)
 
-    def test_pixelsToMeters(pixel_offset, pixel_width, meters_width):
+    def test_pixelsToMeters(self):
         pixel_offset = Constants.IMG_SCALED_WIDTH / 2
-        meters = pixelsToMeters(pixel_offset, pixel_width=Constants.IMG_SCALED_WIDTH, 
+        meters = LineModel.pixelsToMeters(pixel_offset, pixel_width=Constants.IMG_SCALED_WIDTH, 
                             meters_width=Constants.IMG_WIDTH_IN_METERS)
         answer = Constants.IMG_WIDTH_IN_METERS / 2
         self.assertEquals(answer, meters)

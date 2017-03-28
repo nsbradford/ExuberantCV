@@ -83,7 +83,7 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
         ret, frame = cap.read()
         if not ret:
             break
-        if count % 3 != 0:
+        if count % 1 != 0:
             continue
         img = resizeFrame(frame, highres_scale)
         state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
@@ -112,3 +112,4 @@ if __name__ == '__main__':
     # videoDemo('../../taxi_trim.mp4') # framerate of 29.97
     # timerDemo()
     # particleFilterDemo('../../taxi_trim.mp4')
+    particleFilterDemo('taxi_intersect.mp4')
