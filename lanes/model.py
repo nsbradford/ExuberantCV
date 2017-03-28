@@ -7,6 +7,7 @@
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 from config import Constants
 
 
@@ -30,24 +31,34 @@ class LineModel():
     ORIENTATION_MIN = -180.0
     ORIENTATION_MAX = 180.0
 
+    # def __init__(self, m, b, height, width, widthInMeters=3.0):
+    #     self.m = m
+    #     self.b = b
+    #     center = width / 2.0
+    #     nose_height = Constants.IMG_CUTOFF
+    #     pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
+    #     self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
+    #     raw_orientation = math.degrees(math.atan(m))
+    #     offset = - 90 if raw_orientation >= 0 else 90
+    #     self.orientation = raw_orientation + offset
 
-    def __init__(self, m, b, height, width, widthInMeters=3.0):
+    def __init__(self, offset, orientation, m=None, b=None, height=Constants.IMG_SCALED_HEIGHT, 
+                        width=Constants.IMG_SCALED_WIDTH, widthInMeters=Constants.IMG_WIDTH_IN_METERS):
+        self.offset = offset
+        self.orientation = orientation
         self.m = m
         self.b = b
+
+    @classmethod
+    def from_line(cls, m, b, height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH):
         center = width / 2.0
         nose_height = Constants.IMG_CUTOFF
         pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
-        self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
+        offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=Constants.IMG_WIDTH_IN_METERS)
         raw_orientation = math.degrees(math.atan(m))
-        offset = - 90 if raw_orientation >= 0 else 90
-        self.orientation = raw_orientation + offset
-
-
-    # @classmethod
-    # def from_filter(offset, orientation):
-    #     m = math.tan(math.radians(orientation))
-    #     b = 
-    #     return LineModel(m, b, height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH)
+        angle_offset = - 90 if raw_orientation >= 0 else 90
+        orientation = raw_orientation + angle_offset
+        return cls(offset, orientation, m=m, b=b)
 
     def perpendicularDistancePixels(x0, y0, slope, intercept):
         """ First, convert [y=mx+b] to [ax+by+c=0]
@@ -65,7 +76,7 @@ class LineModel():
 
 class ParticleFilterModel():
 
-    def __init__(self, n=200):
+    def __init__(self, n=500):
         self.state_size = 2
         self.n = n
         self.particles = self.init_particles()
@@ -80,8 +91,6 @@ class ParticleFilterModel():
         p_offset = np.random.uniform(low=LineModel.OFFSET_MIN, high=LineModel.OFFSET_MAX, size=self.n)
         p_orientation = np.random.uniform(low=LineModel.ORIENTATION_MIN, high=LineModel.ORIENTATION_MAX, size=self.n)
         return np.vstack((p_offset, p_orientation)).T
-
-
 
     def init_weights(self):
         """ Initialize to a uniform distribution"""
@@ -115,11 +124,10 @@ class ParticleFilterModel():
         resampled_particles = self.particles[resampled_indices, :]
         new_particles = self.apply_control(resampled_particles)
         self.weights = 1 /( 1 + ParticleFilterModel.distance(new_particles, measurement))
-        self.weights /= np.sum(self.weights) # Normalize w
-        
+        self.weights /= np.sum(self.weights)
+        self.state = self.calc_state()
         assert self.particles.shape == (self.n,self.state_size), self.particles.shape
         assert self.weights.shape == (self.n,), self.weights.shape
-        self.state = self.calc_state()
         assert self.state.shape == (self.state_size,)
         return self.state_to_model()
 
@@ -139,6 +147,11 @@ class ParticleFilterModel():
 
 
     def state_to_model(self):
-        return State(LineModel(m=self.state[0], b=self.state[1], height=Constants.IMG_SCALED_HEIGHT, 
+        return State(LineModel(offset=self.state[0], orientation=self.state[1], height=Constants.IMG_SCALED_HEIGHT, 
                             width=Constants.IMG_SCALED_WIDTH))
 
+    def show(self):
+        # text = 'offset {0:.2f} orientation {1:.2f}'.format(self.state[0], self.state[1])
+        # print(text)
+        plt.hexbin(self.particles[:, 0], self.particles[:, 1])
+        plt.show()
