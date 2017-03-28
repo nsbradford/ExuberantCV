@@ -94,7 +94,7 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
     cap.release()
     cv2.destroyAllWindows()
 
-def test_all():
+def testAll():
     print('Test...')
     argv = ['fake', 
             '-verbosity=2', 
@@ -104,11 +104,11 @@ def test_all():
     result = nose.run(argv=argv)
 
 if __name__ == '__main__':
-    # testAll()
+    testAll()
     # pictureDemo('taxi_straight.png')
     # pictureDemo('taxi_side.png')
     # pictureDemo('taxi_curve.png')
     # videoDemo('taxi_intersect.mp4', is_display=True) # framerate of 29.97
     # videoDemo('../../taxi_trim.mp4') # framerate of 29.97
     # timerDemo()
-    particleFilterDemo('../../taxi_trim.mp4')
+    # particleFilterDemo('../../taxi_trim.mp4')
