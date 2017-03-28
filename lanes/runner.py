@@ -101,4 +101,4 @@ if __name__ == '__main__':
     # videoDemo('taxi_intersect.mp4', is_display=True) # framerate of 29.97
     # videoDemo('../../taxi_trim.mp4') # framerate of 29.97
     # timerDemo()
-    particleFilterDemo('taxi_intersect.mp4')
+    particleFilterDemo('../../taxi_trim.mp4')

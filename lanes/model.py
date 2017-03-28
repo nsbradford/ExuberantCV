@@ -8,14 +8,16 @@ import cv2
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from config import Constants
 
+from config import Constants
+from plotter import plotModel
 
 class State():
 
-    def __init__(self, model1, model2=None):
+    def __init__(self, model1, model2=None, img=None):
         self.model1 = model1
         self.model2 = model2
+        self.img = img
 
 
 
@@ -30,6 +32,9 @@ class LineModel():
     OFFSET_MAX = 10.0
     ORIENTATION_MIN = -180.0
     ORIENTATION_MAX = 180.0
+
+    CENTER = Constants.IMG_SCALED_WIDTH / 2.0
+    NOSE_HEIGHT = Constants.IMG_CUTOFF
 
     # def __init__(self, m, b, height, width, widthInMeters=3.0):
     #     self.m = m
@@ -46,21 +51,34 @@ class LineModel():
                         width=Constants.IMG_SCALED_WIDTH, widthInMeters=Constants.IMG_WIDTH_IN_METERS):
         self.offset = offset
         self.orientation = orientation
+        offset_pix = LineModel.pixelsToMeters(self.offset, pixel_width=Constants.IMG_SCALED_WIDTH, 
+                            meters_width=Constants.IMG_WIDTH_IN_METERS)
+        # if not m and not b:
+        #     m, b = LineModel.offsetOrientationtoLine(offset, orientation)
         self.m = m
         self.b = b
-        self.last_measurement = None
 
     @classmethod
-    def from_line(cls, m, b, height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH):
-        center = width / 2.0
-        nose_height = Constants.IMG_CUTOFF
-        pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
-        offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=Constants.IMG_WIDTH_IN_METERS)
+    def from_line(cls, m, b):
+        offset, orientation = LineModel.lineToOffsetOrientation(m, b)
+        return cls(offset, orientation + 180, m=m, b=b)
+
+    @staticmethod
+    def lineToOffsetOrientation(m, b):
+        """ 
+            Args:
+                TODO
+        """
+        pixel_offset = LineModel.perpendicularDistancePixels(x0=LineModel.CENTER, 
+                            y0=LineModel.NOSE_HEIGHT, slope=m, intercept=b)
+        offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=Constants.IMG_SCALED_WIDTH, 
+                            meters_width=Constants.IMG_WIDTH_IN_METERS)
         raw_orientation = math.degrees(math.atan(m))
         angle_offset = - 90 if raw_orientation >= 0 else 90
         orientation = raw_orientation + angle_offset
-        return cls(offset, orientation, m=m, b=b)
+        return offset, orientation
 
+    @staticmethod
     def perpendicularDistancePixels(x0, y0, slope, intercept):
         """ First, convert [y=mx+b] to [ax+by+c=0]
             f((x0,y0), ax+by+c=0) -> |ax0 + by0 + c| / (a^2 + b^2)^1/2 
@@ -70,14 +88,64 @@ class LineModel():
         c = intercept
         return abs(a * x0 + b * y0 + c) / math.sqrt(a ** 2 + b ** 2)
 
+    @staticmethod
     def pixelsToMeters(pixel_offset, pixel_width, meters_width):
-        return pixel_offset * meters_width / pixel_width
+        """
+            Args:
+                pixel_offset: offset from lane, in img pixels
+                pixel_width: width of image in pixels
+                meters_width: width of image in 
+        """
+        meters_per_pix = meters_width / pixel_width
+        return pixel_offset * meters_per_pix
+
+    # @staticmethod
+    # def metersToPixels(meter_offset, pixel_width, meters_width):
+    #     """
+    #         Args:
+    #             pixel_offset: offset from lane, in img pixels
+    #             pixel_width: width of image in pixels
+    #             meters_width: width of image in 
+    #     """
+    #     meters_per_pix = meters_width / pixel_width
+    #     return meter_offset / meters_per_pix
+
+    # @staticmethod
+    # def offsetOrientationtoLine(offset, orientation):
+    #     m = math.tan(math.radians(orientation))
+    #     b = LineModel.calcIntercept(x0=LineModel.CENTER, y0=LineModel.NOSE_HEIGHT, slope=m, 
+    #                         perp_distance=offset)
+    #     return m, b
+
+    # @staticmethod
+    # def calcIntercept(x0, y0, slope, perp_distance):
+    #     first_term = perp_distance * (math.sqrt(slope**2 + (-1)**2))
+    #     second_term = (- slope * x0 + y0)
+    #     sign = LineModel.calcInterceptSign(perp_distance, slope)
+    #     return sign * first_term + second_term
+
+    # @staticmethod
+    # def calcInterceptSign(perp_distance, slope):
+    #     answer = 1
+    #     positive_slope = slope >= 0
+    #     positive_offset = perp_distance >= 0
+    #     if positive_slope and positive_offset:
+    #         answer = -1
+    #     elif positive_slope and not positive_offset:
+    #         answer = 1
+    #     elif not positive_slope and positive_offset:
+    #         answer = 1
+    #     else: # not positive_slope and not positive_offset
+    #         answer = -1
+    #     return answer
 
 
 
 class ParticleFilterModel():
 
     def __init__(self, n=500):
+        self.last_measurement = None
+        self.last_img = None
         self.state_size = 2
         self.n = n
         self.particles = self.init_particles()
@@ -105,6 +173,7 @@ class ParticleFilterModel():
     def update_state(self, state_measurement):
         if not state_measurement:
             return self.state_to_model() # TODO should still update somewhat
+        self.last_img = state_measurement.img
         model = state_measurement.model1
         measurement = np.array([model.offset, model.orientation])
         self.last_measurement = measurement
@@ -130,6 +199,7 @@ class ParticleFilterModel():
         self.weights = 1 /( 1 + ParticleFilterModel.distance(self.particles, measurement))
         self.weights /= np.sum(self.weights)
         self.state = self.calc_state()
+        # print(np.std(self.particles[:, 0]), np.std(self.particles[:, 1]))
         assert self.particles.shape == (self.n,self.state_size), self.particles.shape
         assert self.weights.shape == (self.n,), self.weights.shape
         assert self.state.shape == (self.state_size,)
@@ -139,10 +209,13 @@ class ParticleFilterModel():
     @staticmethod
     def distance(new_particles, measurement):
         """ Squared distance """
-        return ((new_particles - measurement) ** 2).mean(axis=1)
+        return ((new_particles - measurement) ** 2).mean(axis=1) # average of the 2 columns, for each row
+
 
     def apply_control(self, resampled_particles):
-        noise = np.random.normal(0, 1, resampled_particles.shape)
+        noise1 = np.random.normal(0, 1, (self.n, 1))
+        noise2 = np.random.normal(0, 20, (self.n, 1))
+        noise = np.hstack((noise1, noise2))
         return resampled_particles + noise
 
 
@@ -159,9 +232,15 @@ class ParticleFilterModel():
         shape = (20, 360)
         particle_overlay = np.zeros(shape)
         x = self.particles.clip(np.zeros(2), np.array(shape)-1).astype(int) # Clip out-of-bounds particles
-        x = x + np.array([8, 179])
+        x = x + np.array([8, 0])
+        x[x > 19] = 19
+
         particle_overlay[tuple(x.T)] = 1
         # plt.hexbin(self.particles[:, 0], self.particles[:, 1])
         # plt.show()
-        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
+        # cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
+        if self.last_img is not None:
+            # img = plotModel(self.last_img, self.state_to_model().model1)
+            # cv2.imshow('img', img)
+            pass
         # plt.show()
