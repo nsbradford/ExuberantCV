@@ -21,11 +21,11 @@ def timerDemo():
     import timeit
     n_iterations = 1
     n_frames = 125
-    result = timeit.timeit('runner.videoDemo("intersect.mp4", is_display=True, n_frames={})'.format(n_frames), 
+    result = timeit.timeit('runner.videoDemo("intersect.mp4", is_display=False, n_frames={})'.format(n_frames), 
                         setup='import runner;', 
                         number=n_iterations)
     seconds = result / n_iterations
-    print('Timing: {} seconds for 33 frames of video.'.format(seconds))
+    print('Timing: {} seconds for {} frames of video.'.format(seconds, n_frames))
     print('{} frames / second'.format(n_frames / seconds))
 
 
@@ -54,7 +54,7 @@ def videoDemo(filename, is_display=True, highres_scale=0.5, scaled_height=Consta
             break
         img = resizeFrame(frame, highres_scale)
         laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
-        if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
+        if cv2.waitKey(1) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
     cv2.destroyAllWindows()
@@ -88,7 +88,7 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
         state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
         model.update_state(state)
         model.show()
-        if cv2.waitKey(33) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
+        if cv2.waitKey(1) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
     cv2.destroyAllWindows()

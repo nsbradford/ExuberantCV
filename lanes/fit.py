@@ -56,7 +56,7 @@ def fitOneModel(x, y, height, width):
 
 
 def plotModel(img, x, y, mymodel, inliers):
-    # print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orient {3:.2f}'.format(mymodel.m, mymodel.b, mymodel.offset, mymodel.orientation))
+    print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orient {3:.2f}'.format(mymodel.m, mymodel.b, mymodel.offset, mymodel.orientation))
     cv2.line(img=img, pt1=(0,int(mymodel.b)), pt2=(img.shape[1],int(mymodel.m*img.shape[1]+mymodel.b)), 
                         color=(255,0,0), thickness=2)
     cv2.line(img=img, pt1=(0, Constants.IMG_CUTOFF), pt2=(Constants.IMG_SCALED_HEIGHT, Constants.IMG_CUTOFF), 
@@ -99,7 +99,7 @@ def fitLines(copy):
             mymodel2 = None
     except ValueError as e:
         print('ValueError in model_ransac.fit(): {}'.format(str(e)))
-        return img
+        return img, None
     # print('Multiple lines: {}\t{}/{} inliers'.format(is_multi, np.count_nonzero(inliers), inliers.size))
     text = 'offset {0:.2f} orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation)
     # print(text)

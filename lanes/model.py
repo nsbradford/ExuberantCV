@@ -4,7 +4,7 @@
     Nicholas S. Bradford
 
 """
-
+import cv2
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -48,6 +48,7 @@ class LineModel():
         self.orientation = orientation
         self.m = m
         self.b = b
+        self.last_measurement = None
 
     @classmethod
     def from_line(cls, m, b, height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH):
@@ -84,7 +85,7 @@ class ParticleFilterModel():
         self.state = self.init_state()
         assert self.particles.shape == (self.n,self.state_size), self.particles.shape
         assert self.weights.shape == (self.n,), self.weights.shape
-        assert self.state.shape == (self.state_size,)
+        assert self.state.shape == (self.state_size,), self.state.shape
 
 
     def init_particles(self):
@@ -102,8 +103,11 @@ class ParticleFilterModel():
         return self.calc_state()
 
     def update_state(self, state_measurement):
+        if not state_measurement:
+            return self.state_to_model() # TODO should still update somewhat
         model = state_measurement.model1
         measurement = np.array([model.offset, model.orientation])
+        self.last_measurement = measurement
         return self.update(measurement)
 
     def update(self, measurement):
@@ -122,8 +126,8 @@ class ParticleFilterModel():
         assert measurement.shape == (self.state_size,)
         resampled_indices = np.random.choice(a=self.n, size=self.n, replace=True, p=self.weights)
         resampled_particles = self.particles[resampled_indices, :]
-        new_particles = self.apply_control(resampled_particles)
-        self.weights = 1 /( 1 + ParticleFilterModel.distance(new_particles, measurement))
+        self.particles = self.apply_control(resampled_particles)
+        self.weights = 1 /( 1 + ParticleFilterModel.distance(self.particles, measurement))
         self.weights /= np.sum(self.weights)
         self.state = self.calc_state()
         assert self.particles.shape == (self.n,self.state_size), self.particles.shape
@@ -151,7 +155,13 @@ class ParticleFilterModel():
                             width=Constants.IMG_SCALED_WIDTH))
 
     def show(self):
-        # text = 'offset {0:.2f} orientation {1:.2f}'.format(self.state[0], self.state[1])
-        # print(text)
-        plt.hexbin(self.particles[:, 0], self.particles[:, 1])
-        plt.show()
+        print('Filter | \t offset {0:.2f} \t orientation {1:.2f}'.format(self.state[0], self.state[1]))
+        shape = (20, 360)
+        particle_overlay = np.zeros(shape)
+        x = self.particles.clip(np.zeros(2), np.array(shape)-1).astype(int) # Clip out-of-bounds particles
+        x = x + np.array([8, 179])
+        particle_overlay[tuple(x.T)] = 1
+        # plt.hexbin(self.particles[:, 0], self.particles[:, 1])
+        # plt.show()
+        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=5, fy=5))
+        # plt.show()
