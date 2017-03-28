@@ -9,9 +9,8 @@ import cv2
 import numpy as np
 import math
 
-from config import Constants
-from fit import fitLines
-from oldlines import fitRobustLine
+from .config import Constants
+from .fit import fitLines
 
 
 def resizeFrame(img, scale):

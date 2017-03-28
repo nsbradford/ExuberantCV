@@ -4,10 +4,11 @@
 
 """
 
+import nose
 import cv2
 
-from lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
-from model import ParticleFilterModel
+from lanes.lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
+from lanes.model import ParticleFilterModel
 
 def openVideo(filename):
     """ 1920 x 1080 original, 960 x 540 resized """ 
@@ -93,8 +94,17 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
     cap.release()
     cv2.destroyAllWindows()
 
+def test_all():
+    print('Test...')
+    argv = ['fake', 
+            '-verbosity=2', 
+            '--nocapture', 
+            '--with-coverage', 
+            '--cover-package=lanes']
+    result = nose.run(argv=argv)
 
 if __name__ == '__main__':
+    # testAll()
     # pictureDemo('taxi_straight.png')
     # pictureDemo('taxi_side.png')
     # pictureDemo('taxi_curve.png')

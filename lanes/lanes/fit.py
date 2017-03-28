@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 from sklearn import linear_model
 
-from config import Constants
-from model import State, LineModel
-from plotter import plotModel
+from .config import Constants
+from .model import State, LineModel
+from .plotter import plotModel
 
 def extractXY(img):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)

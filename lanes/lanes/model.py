@@ -9,8 +9,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from config import Constants
-from plotter import plotModel
+from .config import Constants
+from .plotter import plotModel
 
 class State():
 
@@ -19,6 +19,27 @@ class State():
         self.model2 = model2
         self.img = img
 
+
+
+    #     self.m = m
+    #     self.b = b
+    #     center = width / 2.0
+    #     nose_height = Constants.IMG_CUTOFF
+    #     pixel_offset = LineModel.perpendicularDistancePixels(x0=center, y0=nose_height, slope=m, intercept=b)
+    #     self.offset = LineModel.pixelsToMeters(pixel_offset, pixel_width=width, meters_width=widthInMeters)
+    #     raw_orientation = math.degrees(math.atan(m))
+    #     offset = - 90 if raw_orientation >= 0 else 90
+    #     self.orientation = raw_orientation + offset
+
+    # def perpendicularDistancePixels(x0, y0, slope, intercept):
+    #     """ f((x0,y0), ax+by+c=0) -> |ax0 + by0 + c| / (a^2 + b^2)^1/2 """
+    #     a = slope
+    #     b = -1
+    #     c = intercept
+    #     return abs(a * x0 + b * y0 + c) / math.sqrt(a ** 2 + b ** 2)
+
+    # def pixelsToMeters(pixel_offset, pixel_width, meters_width):
+    #     return pixel_offset * meters_width / pixel_width
 
 
 class LineModel():

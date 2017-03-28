@@ -1,7 +1,7 @@
 
 
 import cv2
-from config import Constants
+from .config import Constants
 
 def plotModel(img, mymodel, inliers=None, x=None, y=None):
     # print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orient {3:.2f}'.format(mymodel.m, mymodel.b, mymodel.offset, mymodel.orientation))
