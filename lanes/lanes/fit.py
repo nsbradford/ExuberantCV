@@ -72,10 +72,10 @@ def fitLines(copy):
         mymodel, inliers = fitOneModel(x, y, height=img.shape[0], width=img.shape[1])
         outliers = ~inliers
         is_multi = isMultiLine(x, y, inliers, outliers)
-        img = plotModel(img, mymodel, inliers, x, y, color=(255,0,0))
+        img = plotModel('RANSAC-1', img, mymodel, inliers, x, y, color=(255,0,0))
         if is_multi:
             mymodel2, inliers2 = fitOneModel(x[outliers], y[outliers], height=img.shape[0], width=img.shape[1])
-            img = plotModel(img, mymodel2, inliers2, x, y, color=(0,255,0))
+            img = plotModel('RANSAC-2', img, mymodel2, inliers2, x, y, color=(0,255,0))
             # if np.count_nonzero(outliers)/inliers.size > .4:
             #     clustering(np.vstack((x, y)).T)
         else:

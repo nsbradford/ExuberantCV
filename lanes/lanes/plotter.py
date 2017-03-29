@@ -3,9 +3,9 @@
 import cv2
 from .config import Constants
 
-def plotModel(img, mymodel, inliers=None, x=None, y=None, color=(255,0,0)):
+def plotModel(name, img, mymodel, inliers=None, x=None, y=None, color=(255,0,0)):
     # print('RANSAC:, y = {0:.2f}x + {1:.2f} offset {2:.2f} orient {3:.2f}'.format(mymodel.m, mymodel.b, mymodel.offset, mymodel.orientation))
-    print('\tRANSAC: \t*offset {0:.2f} \t orientation {1:.2f}'.format(mymodel.offset, mymodel.orientation))
+    print('\t{0}: \t*offset {1:.2f} \t orientation {2:.2f}'.format(name, mymodel.offset, mymodel.orientation))
     
     # plot hypothesis
     cv2.line(img=img, pt1=(0,int(mymodel.b)), pt2=(img.shape[1],int(mymodel.m*img.shape[1]+mymodel.b)), 

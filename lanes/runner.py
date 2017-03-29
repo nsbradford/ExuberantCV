@@ -8,7 +8,7 @@ import nose
 import cv2
 
 from lanes.lanes import resizeFrame, getPerspectiveMatrix, laneDetection, Constants
-from lanes.model import ParticleFilterModel
+from lanes.particlefilter import ParticleFilterModel
 
 def openVideo(filename):
     """ 1920 x 1080 original, 960 x 540 resized """ 
