@@ -71,11 +71,11 @@ def extractColor(img):
     return res
 
 
-def extractEdges(img):
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, 200, 255, apertureSize=5)
-    bgrEdges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-    return bgrEdges
+# def extractEdges(img):
+#     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+#     edges = cv2.Canny(gray, 200, 255, apertureSize=5)
+#     bgrEdges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+#     return bgrEdges
 
 
 def dilateAndErode(img, n_dilations, n_erosions):
@@ -153,7 +153,7 @@ def show9(img, empty, per, mask, background, colored, dilatedEroded, skeletoned,
 
     top = np.hstack((img, per, background, mask))
     bottom = np.hstack((empty, colored, dilatedEroded, skeletoned, lines))
-    # cv2.imshow('combined', np.vstack((top, bottom)))
+    cv2.imshow('combined', np.vstack((top, bottom)))
 
 
 def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=True):
@@ -162,11 +162,9 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is
     fgmask = fgbg.apply(perspective, learningRate=0.5)
     background = fgbg.getBackgroundImage()
     colored = extractColor(background)
-    # edges = extractEdges(background)
     dilatedEroded = dilateAndErode(colored, n_dilations=2, n_erosions=4)
     skeletoned = skeleton(dilatedEroded)
     curve, state = fitLines(skeletoned)
-    # curve = fitRobustLine(skeletoned)
     if is_display:
         addPerspectivePoints(img, topLeft, topRight, bottomLeft, bottomRight)
         per, mask, back, col, dilEroded, skel, lin = addLabels(  perspective, 
@@ -179,5 +177,5 @@ def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is
         # show7(img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), per, mask, back, col, lin)
         show9(  img, np.zeros((img.shape[0], img.shape[1]-background.shape[1], 3), np.uint8), 
                 per, mask, back, col, dilEroded, skel, lin)
-    return state
+    return curve, state
 

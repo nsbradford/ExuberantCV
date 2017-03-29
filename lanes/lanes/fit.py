@@ -26,7 +26,7 @@ def isMultiLine(x, y, inliers, outliers):
     percent_outlier = n_outliers / m
     percent_is_multi = percent_outlier > 0.3
     if percent_outlier < .2:
-        if debug: print('\tisMultiLine(): Too few outliers')
+        if debug: print('isMultiLine(): Too few outliers')
         return False
 
     combined = np.vstack((x, y))
@@ -72,10 +72,10 @@ def fitLines(copy):
         mymodel, inliers = fitOneModel(x, y, height=img.shape[0], width=img.shape[1])
         outliers = ~inliers
         is_multi = isMultiLine(x, y, inliers, outliers)
-        img = plotModel(img, mymodel, inliers, x, y)
+        img = plotModel(img, mymodel, inliers, x, y, color=(255,0,0))
         if is_multi:
             mymodel2, inliers2 = fitOneModel(x[outliers], y[outliers], height=img.shape[0], width=img.shape[1])
-            img = plotModel(img, mymodel2, inliers2, x, y)
+            img = plotModel(img, mymodel2, inliers2, x, y, color=(0,255,0))
             # if np.count_nonzero(outliers)/inliers.size > .4:
             #     clustering(np.vstack((x, y)).T)
         else:

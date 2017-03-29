@@ -70,7 +70,7 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
             None
     """
     model = ParticleFilterModel()
-    model.show()
+    model.show(None)
     perspectiveMatrix = getPerspectiveMatrix(highres_scale)
     fgbg = cv2.createBackgroundSubtractorMOG2()
     cap = openVideo(filename)
@@ -86,9 +86,9 @@ def particleFilterDemo(filename, is_display=True, highres_scale=0.5,
         if count % 1 != 0:
             continue
         img = resizeFrame(frame, highres_scale)
-        state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
+        curve, state = laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=is_display)
         model.update_state(state)
-        model.show()
+        model.show(curve)
         if cv2.waitKey(1) & 0xFF == ord('q'): # 1000 / 29.97 = 33.37
             break
     cap.release()
