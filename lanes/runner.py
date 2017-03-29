@@ -22,7 +22,7 @@ def timerDemo():
     import timeit
     n_iterations = 1
     n_frames = 125
-    result = timeit.timeit('runner.videoDemo("intersect.mp4", is_display=False, n_frames={})'.format(n_frames), 
+    result = timeit.timeit('runner.particleFilterDemo("intersect.mp4", is_display=False, n_frames={})'.format(n_frames), 
                         setup='import runner;', 
                         number=n_iterations)
     seconds = result / n_iterations

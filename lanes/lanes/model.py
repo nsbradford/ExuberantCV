@@ -51,8 +51,11 @@ class LineModel():
 
     OFFSET_MIN = -10.0
     OFFSET_MAX = 10.0
-    ORIENTATION_MIN = -180.0
-    ORIENTATION_MAX = 180.0
+    OFFSET_RANGE = OFFSET_MAX - OFFSET_MIN
+    ORIENTATION_MIN = 90.0
+    ORIENTATION_MAX = 270.0
+    ORIENTATION_RANGE = ORIENTATION_MAX - ORIENTATION_MIN
+
 
     CENTER = Constants.IMG_SCALED_WIDTH / 2.0
     NOSE_HEIGHT = Constants.IMG_CUTOFF
@@ -164,7 +167,12 @@ class LineModel():
 
 class ParticleFilterModel():
 
-    def __init__(self, n=500):
+    LEARNING_RATE = 1e-1
+    VAR_OFFSET = 0.05
+    VAR_ORIENTATION = 2.0
+    
+
+    def __init__(self, n=1000):
         self.last_measurement = None
         self.last_img = None
         self.state_size = 2
@@ -229,20 +237,18 @@ class ParticleFilterModel():
 
     @staticmethod
     def distance(new_particles, measurement):
-        """ Squared distance """
-        return ((new_particles - measurement) ** 2).mean(axis=1) # average of the 2 columns, for each row
+        """ Squared distance. average of 2 columns, for each row """
+        return ((new_particles - measurement) ** 2).mean(axis=1) * ParticleFilterModel.LEARNING_RATE
 
 
     def apply_control(self, resampled_particles):
-        noise1 = np.random.normal(0, 0.25, (self.n, 1))
-        noise2 = np.random.normal(0, 10, (self.n, 1))
+        noise1 = np.random.normal(0, ParticleFilterModel.VAR_OFFSET, (self.n, 1))
+        noise2 = np.random.normal(0, ParticleFilterModel.VAR_ORIENTATION, (self.n, 1))
         noise = np.hstack((noise1, noise2))
         return resampled_particles + noise
 
-
     def calc_state(self):
         return np.average(a=self.particles, axis=0, weights=self.weights) # for each column
-
 
     def state_to_model(self):
         return State(LineModel(offset=self.state[0], orientation=self.state[1], height=Constants.IMG_SCALED_HEIGHT, 
@@ -250,17 +256,19 @@ class ParticleFilterModel():
 
     def show(self):
         print('Filter | \t offset {0:.2f} \t orientation {1:.2f}'.format(self.state[0], self.state[1]))
-        img_shape = (200,200)
-        shape = (20, 360)
+        length=400
+        img_shape = (length,length)
+        shape = (LineModel.OFFSET_RANGE, LineModel.ORIENTATION_RANGE)
+        
         particle_overlay = np.zeros(img_shape)
-        x = self.particles + + np.array([8, 0])
-        x = x.clip(np.zeros(2), np.array(shape)-1) # Clip out-of-bounds particles
-        x *= np.array([200/20, 200/360])
-        x = x.astype(int)
-
+        x = self.particles + np.array([- LineModel.OFFSET_MIN, - LineModel.ORIENTATION_MIN])
+        x = x.clip(np.array([0, 0]), np.array(shape)-1) # Clip out-of-bounds particles
+        transform = np.array([length/LineModel.OFFSET_RANGE, length/LineModel.ORIENTATION_RANGE])
+        x = (x * transform).astype(int)
         particle_overlay[tuple(x.T)] = 1
-        cv2.imshow('particles', cv2.resize(particle_overlay, dsize=None, fx=1, fy=1))
-        # if self.last_img is not None:
-        #     img = plotModel(self.last_img, self.state_to_model().model1)
-        #     cv2.imshow('img', img)
-        #     pass
+        
+        if self.last_measurement is not None:
+            ycoord = int((self.state[0] - LineModel.OFFSET_MIN) * transform[0])
+            xcoord = int((self.state[1] - LineModel.ORIENTATION_MIN) * transform[1])
+            cv2.circle(particle_overlay, (xcoord, ycoord), radius=15, color=255) #color=(0,0,255))
+        cv2.imshow('particles', particle_overlay)

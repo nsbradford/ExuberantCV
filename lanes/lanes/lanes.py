@@ -153,7 +153,7 @@ def show9(img, empty, per, mask, background, colored, dilatedEroded, skeletoned,
 
     top = np.hstack((img, per, background, mask))
     bottom = np.hstack((empty, colored, dilatedEroded, skeletoned, lines))
-    cv2.imshow('combined', np.vstack((top, bottom)))
+    # cv2.imshow('combined', np.vstack((top, bottom)))
 
 
 def laneDetection(img, fgbg, perspectiveMatrix, scaled_height, highres_scale, is_display=True):
