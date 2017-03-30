@@ -29,6 +29,7 @@ class PinholeCamera:
 				k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0):
 		self.width = width
 		self.height = height
+		# print('yam: height {}, width {}'.format(self.height, self.width))
 		self.fx = fx
 		self.fy = fy
 		self.cx = cx # principal point x (image center)
@@ -53,6 +54,7 @@ class VisualOdometry:
 		self.detector = cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
 		# with open(annotations) as f:
 		# 	self.annotations = f.readlines()
+		# print('cam: height {}, width {}'.format(self.cam.height, self.cam.width))		
 
 	def getAbsoluteScale(self, frame_id):  #specialized for KITTI odometry dataset
 		return 5.0 # TODO
@@ -93,7 +95,9 @@ class VisualOdometry:
 		self.px_ref = self.px_cur
 
 	def update(self, img, frame_id):
-		assert(img.ndim==2 and img.shape[0]==self.cam.height and img.shape[1]==self.cam.width), "Frame: provided image has not the same size as the camera model or image is not grayscale"
+		# print('Cam: height {}, width {}'.format(self.cam.height, self.cam.width))
+		assert img.ndim==2, 'Img is not greyscale.'
+		assert  img.shape[0]==self.cam.height and img.shape[1]==self.cam.width, "Frame: provided image ({}, {}) has not the same size as the camera model ({} {}) or image is not grayscale".format(img.shape[0], img.shape[1], self.cam.height, self.cam.width)
 		self.new_frame = img
 		if(self.frame_stage == STAGE_DEFAULT_FRAME):
 			self.processFrame(frame_id)
