@@ -129,8 +129,6 @@ class ParticleFilterModel():
     def matrix_to_state(self):
         model1 = LineModel(offset=self.state_matrix[0], orientation=self.state_matrix[1],
                             height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH)
-        # model2 = LineModel(offset=self.state_matrix[2], orientation=self.state_matrix[3],
-        #                     height=Constants.IMG_SCALED_HEIGHT, width=Constants.IMG_SCALED_WIDTH)
         return State(model1, None)
 
     def show(self, img):
